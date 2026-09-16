@@ -39,37 +39,80 @@ function hasGlobbedMigrations(root: string): boolean {
  *
  * Copy the three runtime assets next to the bundled module after the Vercel
  * build (and again for local `vite preview`).
+ *
+ * IMPORTANT: register the copy via a Nitro *module* (`nitro.hooks.hook`), never
+ * via `nitro({ hooks: { compiled } })` — defu replaces the Vercel preset's
+ * compiled hook that writes `.vercel/output/config.json` and `.vc-config.json`.
+ * Without those, Vercel ignores Build Output API and looks for Output
+ * Directory `dist` (dashboard default), so the function never deploys correctly.
  */
-function copyPgliteAssetsToVercelOutput(): void {
-  const srcDir = join(process.cwd(), "node_modules/@electric-sql/pglite/dist");
-  const destDir = join(
+const PGLITE_ASSET_NAMES = ["pglite.data", "pglite.wasm", "initdb.wasm"] as const;
+
+/**
+ * Copy PGLite runtime assets beside the Nitro-bundled module.
+ * Returns false when the Vercel function output is not present yet (e.g. early
+ * closeBundle); returns true after a successful copy. Throws if the function
+ * dir exists but assets cannot be sourced — silent skips ship broken deploys.
+ */
+function copyPgliteAssetsToVercelOutput(required = false): boolean {
+  const funcDir = join(
     process.cwd(),
-    ".vercel/output/functions/__server.func/_libs",
+    ".vercel/output/functions/__server.func",
   );
-  if (!existsSync(join(process.cwd(), ".vercel/output/functions/__server.func"))) {
-    return;
+  if (!existsSync(funcDir)) {
+    if (required) {
+      throw new Error(
+        `[pglite-assets] missing ${funcDir} — Nitro vercel output was not produced`,
+      );
+    }
+    return false;
   }
+  const srcDir = join(process.cwd(), "node_modules/@electric-sql/pglite/dist");
+  const destDir = join(funcDir, "_libs");
   mkdirSync(destDir, { recursive: true });
-  for (const name of ["pglite.data", "pglite.wasm", "initdb.wasm"]) {
+  for (const name of PGLITE_ASSET_NAMES) {
     const src = join(srcDir, name);
     const dest = join(destDir, name);
-    if (existsSync(src) && !existsSync(dest)) copyFileSync(src, dest);
+    if (!existsSync(src)) {
+      throw new Error(`[pglite-assets] missing source ${src}`);
+    }
+    copyFileSync(src, dest);
   }
+  console.info(
+    `[pglite-assets] copied ${PGLITE_ASSET_NAMES.join(", ")} -> ${destDir}`,
+  );
+  return true;
+}
+
+/**
+ * Register on Nitro's hookable instance so we *append* to `compiled` instead of
+ * replacing the Vercel preset's `hooks.compiled` (which writes config.json and
+ * .vc-config.json). Passing `hooks: { compiled }` via nitro() uses defu and
+ * overwrites the preset — that was why PR #1 still 500'd and Vercel logged
+ * "No Output Directory named dist".
+ */
+function pgliteAssetsNitroModule() {
+  return function pgliteAssetsModule(nitro: {
+    hooks: { hook: (name: string, fn: () => void) => void };
+  }) {
+    nitro.hooks.hook("compiled", () => {
+      copyPgliteAssetsToVercelOutput(true);
+    });
+  };
 }
 
 function copyPglitePreviewAssetsPlugin(): Plugin {
   return {
     name: "app-builder:pglite-preview-assets",
-    // After Nitro writes `.vercel/output` (build) — required for Vercel deploys.
+    // Safety net if the Nitro module hook does not run for some reason.
     closeBundle: {
       order: "post",
       handler() {
-        copyPgliteAssetsToVercelOutput();
+        copyPgliteAssetsToVercelOutput(false);
       },
     },
-    // Local `vite preview` after a build that somehow skipped closeBundle.
     configurePreviewServer() {
-      copyPgliteAssetsToVercelOutput();
+      copyPgliteAssetsToVercelOutput(false);
     },
   };
 }
@@ -220,13 +263,8 @@ export default defineConfig(({ command, isPreview }) => ({
             // manifest + head-tag middleware). Nitro v3 defaults serverDir to
             // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
-            // Ensure PGLite WASM/data sit beside the bundled module in the
-            // serverless function (Nitro does not emit `new URL(..., import.meta.url)` assets).
-            hooks: {
-              compiled() {
-                copyPgliteAssetsToVercelOutput();
-              },
-            },
+            // Append (do not replace) the Vercel preset's compiled hook.
+            modules: [pgliteAssetsNitroModule()],
           }),
         ]
       : []),
