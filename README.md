@@ -26,17 +26,56 @@ edit notes, or remove books — so the next gift is a new story, not a duplicate
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | Neon (or other Postgres) connection string. If unset, the app uses PGLite. |
+| `DATABASE_URL` | Neon (or other Postgres) connection string. **Required on Vercel** for durable books + auth sessions. If unset, the app uses ephemeral PGLite (fine locally; unreliable on serverless). |
 | `VITE_AUTH_ENABLED` | Set to `"false"` to disable sign-in UI and use the shared dev user (local/preview only). Omit or any other value → auth on. Deploy typically injects `"true"`. |
+| `BETTER_AUTH_URL` | Public app origin, e.g. `https://story-shelf-six.vercel.app`. Required on Vercel so Better Auth trusts the origin (avoids "Invalid origin"). |
+| `BETTER_AUTH_SECRET` | Long random secret that signs sessions. **Required on Vercel** so every serverless instance shares the same secret. |
 | `SHELF_EDITOR_EMAILS` | Comma-separated editor emails (case-insensitive, trimmed). **Fail closed:** unset or empty → no one can mutate the shelf when auth is on. Guests and non-listed signed-in users stay read-only. |
+| `GROK_AUTH_CLIENT_ID` / `GROK_AUTH_CLIENT_SECRET` | Optional. Injected by the **Grok deployer** for Google/X via `auth.grok.me`. Not available for manual Vercel deploys; without them, use email/password on `/login`. The baked preview client only works for `*.grok-sandbox.com`. |
 | `GROK_PROJECT_ID` | Set by the Grok deploy platform; absence means workspace preview. |
+
+### Vercel sign-in (email/password — no `GROK_AUTH_*`)
+
+Google/X on Vercel fail with Invalid origin / localhost callback unless a
+production Grok auth client is injected. **Preferred long-term path:** deploy
+via the Grok platform so it injects `GROK_AUTH_CLIENT_ID` /
+`GROK_AUTH_CLIENT_SECRET`.
+
+**Vercel fallback:** Better Auth **email/password is editors-only** — no open
+signup. A server gate rejects `/sign-up/email`, `/sign-in/email`, and password
+reset unless the email is in `SHELF_EDITOR_EMAILS`.
+
+1. In Vercel → **Settings** → **Environment Variables**, set at least:
+   - `BETTER_AUTH_URL` = `https://story-shelf-six.vercel.app` (no trailing slash)
+   - `BETTER_AUTH_SECRET` = a long random string (e.g. `openssl rand -hex 32`)
+   - `SHELF_EDITOR_EMAILS` = `Mccarlton95@gmail.com`
+   - `DATABASE_URL` = a Neon (or other Postgres) connection string
+2. Do **not** set `VITE_AUTH_ENABLED=false` on Production.
+3. Redeploy after changing env vars.
+4. Open `/login` → **First-time setup** (once) or **Sign in** with
+   `Mccarlton95@gmail.com` and a password of 8+ characters. Any other email is
+   rejected by the server. The same allowlist unlocks Add book.
+
+**Blocker without `DATABASE_URL`:** Vercel serverless + PGLite-only means users,
+sessions, and books do not survive across instances/cold starts. Provision Neon
+(or another Postgres) and set `DATABASE_URL`, then ensure `npm run build` runs
+`db:migrate` (already part of the build script).
 
 ### Setting `SHELF_EDITOR_EMAILS` on Vercel
 
 1. Open the project → **Settings** → **Environment Variables**.
 2. Add `SHELF_EDITOR_EMAILS` for Production (and Preview if you want editors there).
-3. Value example: `parent@example.com,coeditor@example.com`
+3. Value example: `Mccarlton95@gmail.com` (or comma-separated list)
 4. Redeploy so server functions pick up the new value.
+
+### Grok deployer path for Google/X (`GROK_AUTH_*`)
+
+When the app is deployed **through the Grok platform**, the deployer injects a
+per-app `GROK_AUTH_CLIENT_ID` / `GROK_AUTH_CLIENT_SECRET` (plus `DATABASE_URL` /
+`BETTER_AUTH_*`). Manual Vercel deploys do not receive those secrets; the preview
+client in `src/lib/auth/preview.ts` only works for `*.grok-sandbox.com`. There is
+no supported way for the end user to mint production broker credentials — use
+email/password on Vercel, or redeploy via Grok if Google/X is required.
 
 Local auth-off mode (`VITE_AUTH_ENABLED=false` without `DATABASE_URL`) still allows
 the shared DEV_USER to mutate for local PGLite work. Production with auth on
