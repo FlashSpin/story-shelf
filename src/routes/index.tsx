@@ -10,9 +10,8 @@ import { Input } from "@/components/ui/input";
 import { UserButton } from "@/lib/auth/gates";
 import { useShelfEditorAccess } from "@/lib/auth/use-shelf-editor";
 import { listBooks } from "@/lib/books.functions";
-import { AGE_BANDS, type Book } from "@/lib/books.types";
+import type { Book } from "@/lib/books.types";
 import { canonicalIsbn, looksLikeIsbn } from "@/lib/isbn";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   loader: () => listBooks(),
@@ -37,17 +36,13 @@ function Home() {
   const books = Route.useLoaderData();
   const { user, canEdit, isPending } = useShelfEditorAccess();
   const [query, setQuery] = useState("");
-  const [band, setBand] = useState<string>("all");
   const [addOpen, setAddOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [selected, setSelected] = useState<Book | null>(null);
 
   const filtered = useMemo(() => {
-    return books.filter((book) => {
-      if (band !== "all" && book.ageBand !== band) return false;
-      return matchesQuery(book, query);
-    });
-  }, [books, band, query]);
+    return books.filter((book) => matchesQuery(book, query));
+  }, [books, query]);
 
   const isbnQuery = looksLikeIsbn(query);
   const isbnOwned = isbnQuery
@@ -56,9 +51,6 @@ function Home() {
       )
     : undefined;
   const empty = filtered.length === 0;
-  const usedBands = AGE_BANDS.filter((item) =>
-    books.some((book) => book.ageBand === item),
-  );
 
   return (
     <div className="min-h-dvh">
@@ -129,23 +121,6 @@ function Home() {
                   : `${filtered.length} of ${books.length}`}
               </p>
             </div>
-            {usedBands.length > 0 ? (
-              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-                <FilterChip
-                  active={band === "all"}
-                  onClick={() => setBand("all")}
-                  label="All"
-                />
-                {usedBands.map((item) => (
-                  <FilterChip
-                    key={item}
-                    active={band === item}
-                    onClick={() => setBand(item)}
-                    label={item}
-                  />
-                ))}
-              </div>
-            ) : null}
           </div>
         </div>
       </header>
@@ -215,31 +190,6 @@ function Home() {
         onBookChange={setSelected}
       />
     </div>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "h-10 shrink-0 rounded-full px-3.5 text-sm font-medium transition-[background-color,color,box-shadow] duration-150",
-        active
-          ? "bg-primary text-primary-foreground shadow-card"
-          : "bg-card text-foreground shadow-card hover:bg-muted",
-      )}
-    >
-      {label}
-    </button>
   );
 }
 
