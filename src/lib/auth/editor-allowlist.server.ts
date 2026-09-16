@@ -1,11 +1,12 @@
 /**
- * Shelf editor allowlist (v1): `SHELF_EDITOR_EMAILS` comma-separated emails.
+ * Shelf editor env bootstrap: `SHELF_EDITOR_EMAILS` comma-separated emails.
  *
- * Fail-closed: unset or empty → nobody may mutate the shelf when auth is on.
- * Guests and signed-in users whose email is not listed stay read-only.
+ * Fail-closed for the env gate alone: unset or empty → nobody via env.
+ * Invited editors are granted via `shelf_editors` (see shelf-editors.server.ts);
+ * use `isShelfEditor` / `assertShelfEditor` for the full membership check.
  *
- * Future: replace this env gate with invite codes / a `shelf_members`
- * (email + role) table — no invite UI in this pass.
+ * Guests and signed-in users who are neither allowlisted nor DB members stay
+ * read-only.
  */
 
 export class ForbiddenError extends Error {
@@ -34,8 +35,10 @@ export function shelfEditorEmailsFromEnv(
 }
 
 /**
- * True when `email` is on the allowlist. Empty allowlist → always false
- * (fail closed). Null/blank email → false.
+ * True when `email` is on the env allowlist. Empty allowlist → always false
+ * (fail closed for env). Null/blank email → false.
+ *
+ * Does NOT check invited DB members — use `isShelfEditor` for that.
  */
 export function isShelfEditorEmail(
   email: string | null | undefined,
@@ -47,8 +50,8 @@ export function isShelfEditorEmail(
 }
 
 /**
- * Throw 403 unless the session email is allowlisted.
- * Call only after authMiddleware (signed-in path).
+ * Throw 403 unless the session email is on the env allowlist.
+ * Prefer `assertShelfEditor` (env + DB) for mutation gates.
  */
 export function assertShelfEditorEmail(email: string | null | undefined): void {
   const allowlist = shelfEditorEmailsFromEnv();

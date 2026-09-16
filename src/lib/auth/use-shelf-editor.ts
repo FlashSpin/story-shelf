@@ -4,7 +4,7 @@ import { useCurrentUserState } from "./use-current-user";
 
 /**
  * Whether the current visitor may mutate the shelf.
- * Guests and signed-in users not on `SHELF_EDITOR_EMAILS` are read-only.
+ * Guests and signed-in users who are not env-allowlisted or invited DB editors are read-only.
  * Auth-off DEV_USER is treated as an editor (local PGLite).
  *
  * Effect deps must be primitives (`user.id` / `user.primaryEmail`), not the

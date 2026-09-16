@@ -11,8 +11,9 @@ edit notes, or remove books — so the next gift is a new story, not a duplicate
   scan, or manual entry
 - Optional cover photo upload (camera or file)
 - Age band + short shelf notes per book
-- Guest browse is read-only; mutations require an allowlisted editor session;
-  catalog proxies require sign-in
+- Guest browse is read-only; mutations require an editor session (env bootstrap
+  or invited); catalog proxies require sign-in
+- Editors can create copy-paste invite links (`/invite/<token>`) for new editors
 
 ## Stack
 
@@ -30,7 +31,7 @@ edit notes, or remove books — so the next gift is a new story, not a duplicate
 | `VITE_AUTH_ENABLED` | Set to `"false"` to disable sign-in UI and use the shared dev user (local/preview only). Omit or any other value → auth on. Deploy typically injects `"true"`. |
 | `BETTER_AUTH_URL` | Public app origin, e.g. `https://story-shelf-six.vercel.app`. Required on Vercel so Better Auth trusts the origin (avoids "Invalid origin"). |
 | `BETTER_AUTH_SECRET` | Long random secret that signs sessions. **Required on Vercel** so every serverless instance shares the same secret. |
-| `SHELF_EDITOR_EMAILS` | Comma-separated editor emails (case-insensitive, trimmed). **Fail closed:** unset or empty → no one can mutate the shelf when auth is on. Guests and non-listed signed-in users stay read-only. |
+| `SHELF_EDITOR_EMAILS` | Bootstrap editor emails (case-insensitive, trimmed). **Fail closed** with no env and no invited `shelf_editors` rows. Invited editors are stored in the DB after they accept a link — they do not need to stay on this list. |
 | `GROK_AUTH_CLIENT_ID` / `GROK_AUTH_CLIENT_SECRET` | Optional. Injected by the **Grok deployer** for Google/X via `auth.grok.me`. Not available for manual Vercel deploys; without them, use email/password on `/login`. The baked preview client only works for `*.grok-sandbox.com`. |
 | `GROK_PROJECT_ID` | Set by the Grok deploy platform; absence means workspace preview. |
 
@@ -53,8 +54,11 @@ reset unless the email is in `SHELF_EDITOR_EMAILS`.
 2. Do **not** set `VITE_AUTH_ENABLED=false` on Production.
 3. Redeploy after changing env vars.
 4. Open `/login` → **First-time setup** (once) or **Sign in** with
-   `Mccarlton95@gmail.com` and a password of 8+ characters. Any other email is
-   rejected by the server. The same allowlist unlocks Add book.
+   `Mccarlton95@gmail.com` and a password of 8+ characters. That bootstrap
+   email unlocks Add book and **Invite editor**.
+5. To add another editor: signed-in bootstrap editor → **Invite editor** → enter
+   their email → copy the `/invite/<token>` link → they complete first-time
+   setup on that page. Invites are single-use and expire in 7 days.
 
 **Blocker without `DATABASE_URL`:** Vercel serverless + PGLite-only means users,
 sessions, and books do not survive across instances/cold starts. Provision Neon
@@ -81,8 +85,8 @@ Local auth-off mode (`VITE_AUTH_ENABLED=false` without `DATABASE_URL`) still all
 the shared DEV_USER to mutate for local PGLite work. Production with auth on
 always enforces the allowlist.
 
-Future: invite codes / a membership table can replace this env gate — v1 is
-env-only (no invite UI).
+Invited editors live in `shelf_editors` (migration `0004_editor_invites.sql`).
+`SHELF_EDITOR_EMAILS` remains the bootstrap for the first editor only.
 
 Local scripts (`npm run dev` / `build` / `preview`) load `VITE_*` keys from
 `.grok/app-env.json` via `scripts/with-app-env.mjs` when that file exists.
@@ -90,12 +94,15 @@ Do not commit secrets in `.env` — keep using platform-injected env in deploy.
 
 ## Auth model
 
-- **Public:** `listBooks`, book detail cover fetch (`getBookCover`), browsing UI
+- **Public:** `listBooks`, book detail cover fetch (`getBookCover`), browsing UI,
+  `previewEditorInvite` (token validation only)
 - **Signed-in:** `searchCatalog`, `lookupIsbn` (catalog proxies)
-- **Allowlisted editors:** `addBook`, `updateBook`, `updateCover`, `removeBook`
-- The home page gates “Add book” behind editor access; guests and non-editors are
-  not expected to call mutations. If you add a public browse path later, keep it
-  read-only and do **not** call `searchCatalog` / `lookupIsbn` without a session.
+- **Editors** (env bootstrap **or** `shelf_editors` after invite): `addBook`,
+  `updateBook`, `updateCover`, `removeBook`, `createEditorInvite`
+- Invite accept: `/invite/$token` → email/password sign-up with
+  `x-shelf-invite-token`; server verifies the token before granting editor
+- The home page gates “Add book” / “Invite editor” behind editor access; guests
+  stay browse-only.
 
 ## Develop
 
