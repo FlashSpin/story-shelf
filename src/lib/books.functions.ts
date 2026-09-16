@@ -51,13 +51,13 @@ export const getBookCover = createServerFn({ method: "GET" })
     return getBookCoverData(data.id);
   });
 
-/** Whether the current session may mutate the shelf (allowlist / auth-off). */
+/** Whether the current session may mutate the shelf (env/DB editors / auth-off). */
 export const getShelfEditorStatus = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<{ isEditor: boolean }> => {
     const { authConfigured } = await import("@/lib/auth/verify.server");
     const { gateIdentityEnabled } = await import("@/lib/auth/gate-identity.server");
-    const { isShelfEditorEmail } = await import("@/lib/auth/editor-allowlist.server");
+    const { isShelfEditor } = await import("@/lib/auth/shelf-editors.server");
     // Local auth-off + PGLite: shared DEV_USER may mutate.
     if (!authConfigured && !gateIdentityEnabled()) {
       return { isEditor: true };
@@ -65,7 +65,7 @@ export const getShelfEditorStatus = createServerFn({ method: "GET" })
     // authMiddleware forwards the preview bearer token and verifies the session
     // (cookie when deployed). Without it, getSessionUser() saw no session and
     // canEdit stayed false for signed-in editors.
-    return { isEditor: isShelfEditorEmail(context.userEmail) };
+    return { isEditor: await isShelfEditor(context.userEmail) };
   });
 
 export const searchCatalog = createServerFn({ method: "GET" })

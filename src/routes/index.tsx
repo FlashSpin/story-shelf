@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BookOpen, Plus, Search } from "lucide-react";
+import { BookOpen, Plus, Search, UserPlus } from "lucide-react";
 import { AddBookDialog } from "@/components/add-book";
+import { InviteEditorDialog } from "@/components/invite-editor";
 import { BookCover } from "@/components/book-cover";
 import { BookDetail } from "@/components/book-detail";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ function Home() {
   const [query, setQuery] = useState("");
   const [band, setBand] = useState<string>("all");
   const [addOpen, setAddOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [selected, setSelected] = useState<Book | null>(null);
 
   const filtered = useMemo(() => {
@@ -84,6 +86,15 @@ function Home() {
                     <Plus />
                     <span className="hidden sm:inline">Add book</span>
                     <span className="sm:hidden">Add</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setInviteOpen(true)}
+                  >
+                    <UserPlus />
+                    <span className="hidden sm:inline">Invite editor</span>
+                    <span className="sm:hidden">Invite</span>
                   </Button>
                   <UserButton />
                 </div>
@@ -195,6 +206,7 @@ function Home() {
         initialQuery={empty && query ? query : ""}
         onOpenExisting={(book) => setSelected(book)}
       />
+      <InviteEditorDialog open={inviteOpen} onOpenChange={setInviteOpen} />
       <BookDetail
         book={selected}
         onOpenChange={(open) => {

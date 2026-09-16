@@ -88,8 +88,8 @@ function Login() {
           Sign in to edit
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Anyone can browse the shelf. Email sign-in is limited to allowlisted
-          editors — there is no open registration.
+          Anyone can browse the shelf. Email sign-in is limited to editors
+          (bootstrap allowlist or an invite) — there is no open registration.
         </p>
 
         {authEnabled ? (
@@ -194,12 +194,12 @@ function Login() {
                 </Button>
 
                 <p className="text-xs text-muted-foreground">
-                  Only emails in{" "}
+                  Bootstrap editors use{" "}
                   <span className="font-medium text-foreground">
                     SHELF_EDITOR_EMAILS
-                  </span>{" "}
-                  can create an account or sign in. First-time setup is for
-                  allowlisted editors only (not public signup).
+                  </span>
+                  . New editors join via a copy-paste invite link from a current
+                  editor — not public signup.
                 </p>
               </form>
             ) : null}

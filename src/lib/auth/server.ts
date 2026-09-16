@@ -235,7 +235,7 @@ export const auth = betterAuth({
   plugins: [
     gateIdentitySessions(),
 
-    // Email/password is editors-only (SHELF_EDITOR_EMAILS) — no open signup.
+    // Email/password is editors-only (env bootstrap + invites) — no open signup.
     ...(emailAndPasswordEnabled ? [emailPasswordEditorGate()] : []),
 
     // One genericOAuth provider per upstream (when auth is on), all federating

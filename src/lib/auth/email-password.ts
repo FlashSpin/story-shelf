@@ -6,7 +6,8 @@
  *
  * **Editors only — no open signup.** Server gate
  * (`email-password-gate.server.ts`) rejects `/sign-up/email`, `/sign-in/email`,
- * and password-reset for any email not in `SHELF_EDITOR_EMAILS`. Prefer the
+ * and password-reset unless the email is in `SHELF_EDITOR_EMAILS`, already in
+ * `shelf_editors`, or (sign-up only) presents a valid invite token. Prefer the
  * Grok deployer (production `GROK_AUTH_CLIENT_*`) for Google/X long-term.
  *
  * Forms: `authClient.signUp.email` / `authClient.signIn.email` from
