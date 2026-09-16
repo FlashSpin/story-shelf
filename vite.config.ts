@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, readdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
@@ -30,21 +30,46 @@ function hasGlobbedMigrations(root: string): boolean {
  * migrations — no schema to apply — skips it entirely rather than paying for a
  * PGLite instance it never queries.
  */
+/**
+ * Nitro/esbuild bundles `@electric-sql/pglite` into `_libs/electric-sql__pglite.mjs`
+ * but does not follow `new URL("./pglite.{data,wasm}", import.meta.url)`, so the
+ * WASM/data files never land in the Vercel serverless output. Without them,
+ * production falls back to PGLite (no `DATABASE_URL`) and returns HTTP 500:
+ * missing `/var/task/_libs/pglite.data`.
+ *
+ * Copy the three runtime assets next to the bundled module after the Vercel
+ * build (and again for local `vite preview`).
+ */
+function copyPgliteAssetsToVercelOutput(): void {
+  const srcDir = join(process.cwd(), "node_modules/@electric-sql/pglite/dist");
+  const destDir = join(
+    process.cwd(),
+    ".vercel/output/functions/__server.func/_libs",
+  );
+  if (!existsSync(join(process.cwd(), ".vercel/output/functions/__server.func"))) {
+    return;
+  }
+  mkdirSync(destDir, { recursive: true });
+  for (const name of ["pglite.data", "pglite.wasm", "initdb.wasm"]) {
+    const src = join(srcDir, name);
+    const dest = join(destDir, name);
+    if (existsSync(src) && !existsSync(dest)) copyFileSync(src, dest);
+  }
+}
+
 function copyPglitePreviewAssetsPlugin(): Plugin {
   return {
     name: "app-builder:pglite-preview-assets",
+    // After Nitro writes `.vercel/output` (build) — required for Vercel deploys.
+    closeBundle: {
+      order: "post",
+      handler() {
+        copyPgliteAssetsToVercelOutput();
+      },
+    },
+    // Local `vite preview` after a build that somehow skipped closeBundle.
     configurePreviewServer() {
-      const srcDir = join(process.cwd(), "node_modules/@electric-sql/pglite/dist");
-      const destDir = join(
-        process.cwd(),
-        ".vercel/output/functions/__server.func/_libs",
-      );
-      if (!existsSync(destDir)) return;
-      for (const name of ["pglite.data", "pglite.wasm", "initdb.wasm"]) {
-        const src = join(srcDir, name);
-        const dest = join(destDir, name);
-        if (existsSync(src) && !existsSync(dest)) copyFileSync(src, dest);
-      }
+      copyPgliteAssetsToVercelOutput();
     },
   };
 }
@@ -195,6 +220,13 @@ export default defineConfig(({ command, isPreview }) => ({
             // manifest + head-tag middleware). Nitro v3 defaults serverDir to
             // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
+            // Ensure PGLite WASM/data sit beside the bundled module in the
+            // serverless function (Nitro does not emit `new URL(..., import.meta.url)` assets).
+            hooks: {
+              compiled() {
+                copyPgliteAssetsToVercelOutput();
+              },
+            },
           }),
         ]
       : []),
