@@ -82,14 +82,14 @@ function Login() {
     <main className="grid min-h-dvh place-items-center px-6 py-12">
       <div className="w-full max-w-sm">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary">
-          Family library
+          Raffy's shelf
         </p>
         <h1 className="mt-2 font-display text-4xl font-medium tracking-tight">
-          Sign in to edit
+          Sign in to help
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Anyone can browse the shelf. Email sign-in is limited to editors
-          (bootstrap allowlist or an invite) — there is no open registration.
+          Anyone can browse Raffy's shelf. Sign in if you've been invited to help
+          — there's no open signup.
         </p>
 
         {authEnabled ? (
@@ -124,7 +124,7 @@ function Login() {
                       setError(null);
                     }}
                   >
-                    First-time setup
+                    Create account
                   </button>
                 </div>
 

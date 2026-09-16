@@ -75,7 +75,7 @@ export function InviteEditorDialog({ open, onOpenChange }: Props) {
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invite editor</DialogTitle>
+          <DialogTitle>Invite someone to help</DialogTitle>
           <DialogDescription>
             Create a single-use link (expires in 7 days). The invitee opens it,
             sets a password for the email you enter here, and becomes an editor.
@@ -132,7 +132,7 @@ export function InviteEditorDialog({ open, onOpenChange }: Props) {
         ) : (
           <form className="flex flex-col gap-3" onSubmit={onSubmit}>
             <div className="space-y-1.5">
-              <Label htmlFor="invite-email">Invitee email</Label>
+              <Label htmlFor="invite-email">Their email</Label>
               <Input
                 id="invite-email"
                 type="email"
@@ -150,7 +150,7 @@ export function InviteEditorDialog({ open, onOpenChange }: Props) {
             ) : null}
             <Button type="submit" disabled={submitting}>
               <UserPlus />
-              {submitting ? "Creating invite…" : "Create invite link"}
+              {submitting ? "Creating link…" : "Create invite link"}
             </Button>
           </form>
         )}
