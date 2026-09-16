@@ -6,11 +6,14 @@ edit notes, or remove books — so the next gift is a new story, not a duplicate
 
 ## Features
 
-- Browse and filter the family shelf (age band, title / author / ISBN search)
+- Browse the family shelf (title / author / ISBN search)
+- **Recently added** strip near the top of the home shelf (newest covers)
+- **Wishlist** (`/wishlist`) for gift ideas not owned yet — guests browse;
+  editors add / remove / move onto the owned shelf
 - Add books via catalog search (Open Library + Google Books), ISBN / barcode
   scan, or manual entry
 - Optional cover photo upload (camera or file)
-- Age band + short shelf notes per book
+- Short shelf notes per book
 - Guest browse is read-only; mutations require an editor session (env bootstrap
   or invited); catalog proxies require sign-in
 - Editors can create copy-paste invite links (`/invite/<token>`) for new editors
@@ -90,17 +93,22 @@ always enforces the allowlist.
 Invited editors live in `shelf_editors` (migration `0004_editor_invites.sql`).
 `SHELF_EDITOR_EMAILS` remains the bootstrap for the first editor only.
 
+Wishlist gift ideas live in `wishlist_items` (migration `0005_wishlist.sql`).
+Adding an owned book with a matching ISBN clears that wishlist row; editors can
+also **Move to shelf** from a wishlist card.
+
 Local scripts (`npm run dev` / `build` / `preview`) load `VITE_*` keys from
 `.grok/app-env.json` via `scripts/with-app-env.mjs` when that file exists.
 Do not commit secrets in `.env` — keep using platform-injected env in deploy.
 
 ## Auth model
 
-- **Public:** `listBooks`, book detail cover fetch (`getBookCover`), browsing UI,
-  `previewEditorInvite` (token validation only)
+- **Public:** `listBooks`, `listWishlist`, book detail cover fetch (`getBookCover`),
+  browsing UI, `previewEditorInvite` (token validation only)
 - **Signed-in:** `searchCatalog`, `lookupIsbn` (catalog proxies)
 - **Editors** (env bootstrap **or** `shelf_editors` after invite): `addBook`,
-  `updateBook`, `updateCover`, `removeBook`, `createEditorInvite`
+  `updateBook`, `updateCover`, `removeBook`, `addWishlistItem`,
+  `removeWishlistItem`, `moveWishlistToShelf`, `createEditorInvite`
 - Invite accept: `/invite/$token` → email/password sign-up with
   `x-shelf-invite-token`; server verifies the token before granting editor
 - The home page gates “Add book” / “Invite editor” behind editor access; guests
