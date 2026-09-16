@@ -24,6 +24,9 @@ import { createMiddleware } from "@tanstack/react-start";
  * `DATABASE_URL` is also set, so an app without sign-in must not use this at
  * all. On the auth-on path, use it on every server function that touches
  * per-user data and scope every query by `context.userId`.
+ *
+ * Context also includes `userEmail` (null for the auth-off DEV_USER) so
+ * `requireEditorMiddleware` can enforce `SHELF_EDITOR_EMAILS`.
  */
 export const authMiddleware = createMiddleware({ type: "function" })
   .client(async ({ next }) => {
@@ -39,9 +42,33 @@ export const authMiddleware = createMiddleware({ type: "function" })
     // `isolation.server.ts` — keep this import in sync so image `tsc` resolves
     // it, and so Vite does not ship `@tanstack/react-start/server` to the browser.
     const { assertSameSiteRequest } = await import("./isolation.server");
-    const { requireUserId } = await import("./verify.server");
+    const { requireUser } = await import("./verify.server");
     // Reject scripted cross-site/sibling requests before touching per-user data.
     assertSameSiteRequest();
-    const userId = await requireUserId(context.bearerToken);
-    return next({ context: { userId } });
+    const user = await requireUser(context.bearerToken);
+    return next({ context: { userId: user.id, userEmail: user.email } });
+  });
+
+/**
+ * After `authMiddleware`: require the session email ∈ `SHELF_EDITOR_EMAILS`.
+ * Fail closed when the env is unset/empty. Skipped only for the local auth-off
+ * DEV_USER path (no real accounts). Re-resolves the session for typing safety
+ * (does not rely on inferred context fields from the prior middleware).
+ */
+export const requireEditorMiddleware = createMiddleware({ type: "function" })
+  .client(async ({ next }) => {
+    const { getBearerToken } = await import("./client");
+    return next({ sendContext: { bearerToken: getBearerToken() ?? undefined } });
+  })
+  .server(async ({ next, context }) => {
+    const { authConfigured, requireUser } = await import("./verify.server");
+    const { gateIdentityEnabled } = await import("./gate-identity.server");
+    // Local auth-off + PGLite: shared DEV_USER has no email — allow mutations.
+    if (!authConfigured && !gateIdentityEnabled()) {
+      return next();
+    }
+    const { assertShelfEditorEmail } = await import("./editor-allowlist.server");
+    const user = await requireUser(context.bearerToken);
+    assertShelfEditorEmail(user.email);
+    return next();
   });

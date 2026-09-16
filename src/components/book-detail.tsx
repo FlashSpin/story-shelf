@@ -31,8 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCurrentUserState } from "@/lib/auth/use-current-user";
-import { removeBook, updateBook, updateCover } from "@/lib/books.functions";
+import { useShelfEditorAccess } from "@/lib/auth/use-shelf-editor";
+import { getBookCover, removeBook, updateBook, updateCover } from "@/lib/books.functions";
 import { AGE_BANDS, parseAgeBand, type Book } from "@/lib/books.types";
 import { formatIsbn } from "@/lib/isbn";
 
@@ -46,19 +46,35 @@ export function BookDetail({
   onBookChange?: (book: Book) => void;
 }) {
   const router = useRouter();
-  const { user, isPending } = useCurrentUserState();
-  const canEdit = Boolean(user);
+  const { canEdit, isPending } = useShelfEditorAccess();
   const [notes, setNotes] = useState(book?.notes ?? "");
   const [ageBand, setAgeBand] = useState(book?.ageBand ?? "");
   const [localCover, setLocalCover] = useState<string | null>(null);
+  const [uploadedCover, setUploadedCover] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   useEffect(() => {
     setNotes(book?.notes ?? "");
     setAgeBand(book?.ageBand ?? "");
-    setLocalCover(null);
   }, [book]);
+
+  useEffect(() => {
+    setLocalCover(null);
+    setUploadedCover(null);
+  }, [book?.id]);
+
+  // List payloads omit uploaded cover bytes; fetch them when opening detail.
+  useEffect(() => {
+    if (!book?.hasCoverUpload) return;
+    let cancelled = false;
+    void getBookCover({ data: { id: book.id } }).then((dataUrl) => {
+      if (!cancelled) setUploadedCover(dataUrl);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [book?.id, book?.hasCoverUpload]);
 
   const dirty =
     Boolean(book) &&
@@ -98,7 +114,10 @@ export function BookDetail({
         data: { id: book.id, coverData },
       });
       await router.invalidate({ sync: true });
-      if (updated) onBookChange?.(updated);
+      if (updated) {
+        setUploadedCover(coverData);
+        onBookChange?.(updated);
+      }
       toast.success("Cover photo saved");
     } catch (err) {
       setLocalCover(null);
@@ -143,14 +162,14 @@ export function BookDetail({
                   <CoverUpload
                     title={book.title}
                     authors={book.authors}
-                    coverUrl={localCover ?? book.coverUrl}
+                    coverUrl={localCover ?? uploadedCover ?? book.coverUrl}
                     onChange={(dataUrl) => void onUploadCover(dataUrl)}
                   />
                 ) : (
                   <BookCover
                     title={book.title}
                     authors={book.authors}
-                    coverUrl={book.coverUrl}
+                    coverUrl={uploadedCover ?? book.coverUrl}
                     className="mx-auto w-36 sm:w-full"
                   />
                 )}

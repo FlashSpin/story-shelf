@@ -6,6 +6,26 @@ export function isCoverDataUrl(value: string): boolean {
   return /^data:image\/(jpeg|png|webp);base64,/i.test(value);
 }
 
+/** True for http(s) cover URLs safe to keep on the list/display path. */
+export function isHttpsCoverUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value.trim());
+}
+
+/**
+ * List/display cover: keep HTTPS catalog URLs; drop data URLs and other junk
+ * so shelf payloads stay small.
+ */
+export function publicListCoverUrl(
+  coverUrl: string | null | undefined,
+): string | null {
+  if (!coverUrl) return null;
+  const trimmed = coverUrl.trim();
+  if (!trimmed || isCoverDataUrl(trimmed) || !isHttpsCoverUrl(trimmed)) {
+    return null;
+  }
+  return trimmed.replace(/^http:\/\//i, "https://");
+}
+
 export async function compressCover(file: File): Promise<string> {
   if (!file.type.startsWith("image/")) {
     throw new Error("Please choose a photo of the cover.");

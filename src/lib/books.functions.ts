@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { authMiddleware } from "@/lib/auth/middleware";
+import { authMiddleware, requireEditorMiddleware } from "@/lib/auth/middleware";
 import type { Book, BookHit } from "@/lib/books.types";
 import { AGE_BANDS } from "@/lib/books.types";
 
@@ -13,11 +13,20 @@ const coverDataSchema = z
   .optional()
   .nullable();
 
+/** Catalog / external covers only — never accept data URLs on coverUrl. */
+const coverUrlSchema = z
+  .string()
+  .trim()
+  .max(2000)
+  .regex(/^https?:\/\//i, "coverUrl must be an http(s) URL")
+  .optional()
+  .nullable();
+
 const draftSchema = z.object({
   title: z.string().trim().min(1).max(300),
   authors: z.string().trim().max(300).optional().default(""),
   isbn: z.string().trim().max(32).optional().nullable(),
-  coverUrl: z.string().trim().max(2000).optional().nullable(),
+  coverUrl: coverUrlSchema,
   coverData: coverDataSchema,
   publisher: z.string().trim().max(200).optional().nullable(),
   publishedYear: z.string().trim().max(12).optional().nullable(),
@@ -34,8 +43,32 @@ export const listBooks = createServerFn({ method: "GET" }).handler(
   },
 );
 
+/** Fetch uploaded cover bytes for detail view (omitted from list payloads). */
+export const getBookCover = createServerFn({ method: "GET" })
+  .validator(z.object({ id: z.number().int().positive() }))
+  .handler(async ({ data }): Promise<string | null> => {
+    const { getBookCoverData } = await import("./books.server");
+    return getBookCoverData(data.id);
+  });
+
+/** Whether the current session may mutate the shelf (allowlist / auth-off). */
+export const getShelfEditorStatus = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ isEditor: boolean }> => {
+    const { authConfigured, getSessionUser } = await import("@/lib/auth/verify.server");
+    const { gateIdentityEnabled } = await import("@/lib/auth/gate-identity.server");
+    const { isShelfEditorEmail } = await import("@/lib/auth/editor-allowlist.server");
+    if (!authConfigured && !gateIdentityEnabled()) {
+      return { isEditor: true };
+    }
+    const user = await getSessionUser();
+    if (!user) return { isEditor: false };
+    return { isEditor: isShelfEditorEmail(user.email) };
+  },
+);
+
 export const searchCatalog = createServerFn({ method: "GET" })
   .validator(z.object({ q: z.string().trim().min(1).max(200) }))
+  .middleware([authMiddleware])
   .handler(async ({ data }): Promise<BookHit[]> => {
     const { searchExternalCatalog } = await import("./books.server");
     return searchExternalCatalog(data.q);
@@ -43,6 +76,7 @@ export const searchCatalog = createServerFn({ method: "GET" })
 
 export const lookupIsbn = createServerFn({ method: "GET" })
   .validator(z.object({ isbn: z.string().trim().min(10).max(32) }))
+  .middleware([authMiddleware])
   .handler(async ({ data }): Promise<BookHit | null> => {
     const { lookupIsbnExternal } = await import("./books.server");
     return lookupIsbnExternal(data.isbn);
@@ -54,16 +88,18 @@ export type AddBookResult =
 
 export const addBook = createServerFn({ method: "POST" })
   .validator(draftSchema)
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, requireEditorMiddleware])
   .handler(async ({ data }): Promise<AddBookResult> => {
     const { findBookByIsbn, insertBook } = await import("./books.server");
     if (data.isbn) {
       const existing = await findBookByIsbn(data.isbn);
       if (existing) return { ok: false, reason: "duplicate", existing };
     }
+    // Keep HTTPS catalog covers in coverUrl; uploaded data URLs stay in coverData.
     const book = await insertBook({
       ...data,
-      coverUrl: data.coverData || data.coverUrl,
+      coverUrl: data.coverUrl,
+      coverData: data.coverData,
     });
     return { ok: true, book };
   });
@@ -76,7 +112,7 @@ export const updateBook = createServerFn({ method: "POST" })
       ageBand: ageBandSchema,
     }),
   )
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, requireEditorMiddleware])
   .handler(async ({ data }): Promise<Book | null> => {
     const { updateBookNotes } = await import("./books.server");
     return updateBookNotes(data.id, data.notes, data.ageBand ?? null);
@@ -93,7 +129,7 @@ export const updateCover = createServerFn({ method: "POST" })
         .regex(/^data:image\/(jpeg|png|webp);base64,/i),
     }),
   )
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, requireEditorMiddleware])
   .handler(async ({ data }): Promise<Book | null> => {
     const { updateBookCover } = await import("./books.server");
     return updateBookCover(data.id, data.coverData);
@@ -101,7 +137,7 @@ export const updateCover = createServerFn({ method: "POST" })
 
 export const removeBook = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.number().int().positive() }))
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, requireEditorMiddleware])
   .handler(async ({ data }): Promise<{ ok: boolean }> => {
     const { deleteBookById } = await import("./books.server");
     return { ok: await deleteBookById(data.id) };

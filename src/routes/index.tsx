@@ -7,7 +7,7 @@ import { BookDetail } from "@/components/book-detail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserButton } from "@/lib/auth/gates";
-import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { useShelfEditorAccess } from "@/lib/auth/use-shelf-editor";
 import { listBooks } from "@/lib/books.functions";
 import { AGE_BANDS, type Book } from "@/lib/books.types";
 import { canonicalIsbn, looksLikeIsbn } from "@/lib/isbn";
@@ -34,8 +34,7 @@ function matchesQuery(book: Book, query: string): boolean {
 
 function Home() {
   const books = Route.useLoaderData();
-  const { user, isPending } = useCurrentUserState();
-  const canEdit = Boolean(user);
+  const { user, canEdit, isPending } = useShelfEditorAccess();
   const [query, setQuery] = useState("");
   const [band, setBand] = useState<string>("all");
   const [addOpen, setAddOpen] = useState(false);
@@ -86,6 +85,11 @@ function Home() {
                     <span className="hidden sm:inline">Add book</span>
                     <span className="sm:hidden">Add</span>
                   </Button>
+                  <UserButton />
+                </div>
+              ) : user ? (
+                <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+                  <p className="text-xs text-muted-foreground">Browse only</p>
                   <UserButton />
                 </div>
               ) : (

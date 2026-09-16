@@ -81,7 +81,11 @@ export async function getSessionUser(
  *   read/write everyone's rows.
  * - Auth disabled + no database -> the shared dev user id.
  */
-export async function requireUserId(bearerToken?: string): Promise<string> {
+/**
+ * Resolve the current user for a server function, or throw when unauthorized.
+ * Same rules as `requireUserId`, but also returns `email` (null for DEV_USER).
+ */
+export async function requireUser(bearerToken?: string): Promise<VerifiedUser> {
   if (!authConfigured && !gateIdentityEnabled()) {
     if (databaseConfigured) {
       throw new Error(
@@ -89,9 +93,14 @@ export async function requireUserId(bearerToken?: string): Promise<string> {
           "refusing to fall back to the shared dev user against a real database.",
       );
     }
-    return DEV_USER_ID;
+    return { id: DEV_USER_ID, email: null };
   }
   const user = await getSessionUser(bearerToken);
   if (!user) throw new UnauthorizedError();
+  return user;
+}
+
+export async function requireUserId(bearerToken?: string): Promise<string> {
+  const user = await requireUser(bearerToken);
   return user.id;
 }

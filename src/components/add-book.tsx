@@ -111,10 +111,16 @@ export function AddBookDialog({
         const list = results.filter(Boolean) as BookHit[];
         setHits(list);
         setSearchError(list.length === 0 ? "No matching titles found." : null);
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setHits([]);
-          setSearchError("Lookup failed. Try again or add the book by hand.");
+          if (err instanceof Error && err.message === "Unauthorized") {
+            setSearchError("Sign in to search the catalog.");
+            onOpenChange(false);
+            void router.navigate({ to: "/login" });
+          } else {
+            setSearchError("Lookup failed. Try again or add the book by hand.");
+          }
         }
       } finally {
         if (!cancelled) setSearching(false);
@@ -191,7 +197,13 @@ export function AddBookDialog({
         setMode("manual");
         setSearchError(null);
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.message === "Unauthorized") {
+        toast.error("Sign in to look up ISBNs.");
+        onOpenChange(false);
+        await router.navigate({ to: "/login" });
+        return;
+      }
       setDraft((d) => ({ ...d, isbn }));
       setMode("manual");
     } finally {
