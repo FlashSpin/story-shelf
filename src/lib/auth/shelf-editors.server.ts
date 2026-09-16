@@ -10,6 +10,7 @@ import {
   isShelfEditorEmail,
   shelfEditorEmailsFromEnv,
 } from "./editor-allowlist.server";
+import { throwHttpError } from "./throw-http.server";
 
 function normalizeEmail(email: string | null | undefined): string | null {
   const trimmed = email?.trim().toLowerCase();
@@ -53,11 +54,13 @@ export async function assertShelfEditor(
   if (allowlist.size === 0) {
     // Still fail closed when neither bootstrap nor any chance of DB membership
     // for this email — keep a clear message when env is unset.
-    throw new ForbiddenError(
-      "Forbidden: not a shelf editor (set SHELF_EDITOR_EMAILS or accept an invite)",
+    throwHttpError(
+      new ForbiddenError(
+        "Forbidden: not a shelf editor (set SHELF_EDITOR_EMAILS or accept an invite)",
+      ),
     );
   }
-  throw new ForbiddenError("Forbidden: not a shelf editor");
+  throwHttpError(new ForbiddenError("Forbidden: not a shelf editor"));
 }
 
 /** Insert or refresh a DB editor row after invite acceptance. */
