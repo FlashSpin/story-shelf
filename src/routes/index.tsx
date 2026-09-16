@@ -69,6 +69,16 @@ function Home() {
                 A shared catalog of books already at home. Search before you buy
                 so the next gift is a new story, not a duplicate.
               </p>
+              {!user && !isPending ? (
+                <p className="mt-2 text-sm">
+                  <Link
+                    to="/check"
+                    className="text-primary underline-offset-4 hover:underline"
+                  >
+                    Shopping for a gift? Check before you buy
+                  </Link>
+                </p>
+              ) : null}
               <nav className="mt-4 flex flex-wrap gap-2">
                 <Button type="button" variant="outline" size="sm" disabled>
                   Raffy's shelf

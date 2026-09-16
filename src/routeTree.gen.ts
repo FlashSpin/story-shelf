@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CheckRouteImport } from './routes/check'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
@@ -18,6 +19,11 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckRoute = CheckRouteImport.update({
+  id: '/check',
+  path: '/check',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -43,6 +49,7 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/check': typeof CheckRoute
   '/login': typeof LoginRoute
   '/wishlist': typeof WishlistRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/check': typeof CheckRoute
   '/login': typeof LoginRoute
   '/wishlist': typeof WishlistRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/check': typeof CheckRoute
   '/login': typeof LoginRoute
   '/wishlist': typeof WishlistRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -65,15 +74,23 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/wishlist' | '/invite/$token' | '/api/auth/$'
+  fullPaths:
+    '/' | '/check' | '/login' | '/wishlist' | '/invite/$token' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/wishlist' | '/invite/$token' | '/api/auth/$'
+  to: '/' | '/check' | '/login' | '/wishlist' | '/invite/$token' | '/api/auth/$'
   id:
-    '__root__' | '/' | '/login' | '/wishlist' | '/invite/$token' | '/api/auth/$'
+    | '__root__'
+    | '/'
+    | '/check'
+    | '/login'
+    | '/wishlist'
+    | '/invite/$token'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CheckRoute: typeof CheckRoute
   LoginRoute: typeof LoginRoute
   WishlistRoute: typeof WishlistRoute
   InviteTokenRoute: typeof InviteTokenRoute
@@ -87,6 +104,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/check': {
+      id: '/check'
+      path: '/check'
+      fullPath: '/check'
+      preLoaderRoute: typeof CheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -122,6 +146,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CheckRoute: CheckRoute,
   LoginRoute: LoginRoute,
   WishlistRoute: WishlistRoute,
   InviteTokenRoute: InviteTokenRoute,
