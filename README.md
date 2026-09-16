@@ -7,6 +7,9 @@ edit notes, or remove books — so the next gift is a new story, not a duplicate
 ## Features
 
 - Browse the family shelf (title / author / ISBN search)
+- **Gift check** (`/check`) — guests ask “Already on Raffy’s shelf?” with one
+  clear owned / wishlist / not-on-shelf card (ISBN or title; barcode scan when
+  the browser supports it)
 - **Recently added** strip near the top of the home shelf (newest covers)
 - **Wishlist** (`/wishlist`) for gift ideas not owned yet — guests browse;
   editors add / remove / move onto the owned shelf
