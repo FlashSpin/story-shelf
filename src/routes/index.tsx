@@ -5,6 +5,7 @@ import { AddBookDialog } from "@/components/add-book";
 import { InviteEditorDialog } from "@/components/invite-editor";
 import { BookCover } from "@/components/book-cover";
 import { BookDetail } from "@/components/book-detail";
+import { RecentlyAddedStrip } from "@/components/recently-added";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserButton } from "@/lib/auth/gates";
@@ -68,6 +69,14 @@ function Home() {
                 A shared catalog of books already at home. Search before you buy
                 so the next gift is a new story, not a duplicate.
               </p>
+              <nav className="mt-4 flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" disabled>
+                  Raffy's shelf
+                </Button>
+                <Button type="button" variant="secondary" size="sm" asChild>
+                  <Link to="/wishlist">Wishlist</Link>
+                </Button>
+              </nav>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2">
               {isPending ? (
@@ -126,6 +135,10 @@ function Home() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        {!query.trim() && books.length > 0 ? (
+          <RecentlyAddedStrip books={books} onSelect={setSelected} />
+        ) : null}
+
         {isbnQuery && isbnOwned ? (
           <div className="mb-6 rounded-2xl bg-primary px-4 py-4 text-primary-foreground sm:px-5">
             <p className="text-xs font-medium uppercase tracking-[0.16em] opacity-80">

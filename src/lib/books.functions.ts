@@ -103,6 +103,11 @@ export const addBook = createServerFn({ method: "POST" })
       coverUrl: data.coverUrl,
       coverData: data.coverData,
     });
+    // Gift idea fulfilled — drop matching wishlist ISBN if present.
+    if (book.isbn) {
+      const { deleteWishlistByIsbn } = await import("./wishlist.server");
+      await deleteWishlistByIsbn(book.isbn);
+    }
     return { ok: true, book };
   });
 
