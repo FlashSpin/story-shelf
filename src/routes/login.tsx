@@ -88,8 +88,8 @@ function Login() {
           Sign in to edit
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Anyone can browse the shelf. Sign in to add books, upload covers, and
-          make changes.
+          Anyone can browse the shelf. Email sign-in is limited to allowlisted
+          editors — there is no open registration.
         </p>
 
         {authEnabled ? (
@@ -124,7 +124,7 @@ function Login() {
                       setError(null);
                     }}
                   >
-                    Create account
+                    First-time setup
                   </button>
                 </div>
 
@@ -186,19 +186,20 @@ function Login() {
                 >
                   {submitting
                     ? mode === "sign-up"
-                      ? "Creating account…"
+                      ? "Creating editor account…"
                       : "Signing in…"
                     : mode === "sign-up"
-                      ? "Create account"
+                      ? "Create editor account"
                       : "Sign in with email"}
                 </Button>
 
                 <p className="text-xs text-muted-foreground">
-                  Sign in with an email listed in{" "}
+                  Only emails in{" "}
                   <span className="font-medium text-foreground">
                     SHELF_EDITOR_EMAILS
                   </span>{" "}
-                  so shelf edits unlock after sign-in.
+                  can create an account or sign in. First-time setup is for
+                  allowlisted editors only (not public signup).
                 </p>
               </form>
             ) : null}
@@ -222,8 +223,9 @@ function Login() {
               ))}
               {emailAndPasswordEnabled ? (
                 <p className="text-xs text-muted-foreground">
-                  Google / X need a production Grok auth client. On Vercel without
-                  GROK_AUTH_* credentials, use email and password above.
+                  Preferred long-term: Google via the Grok deployer
+                  (GROK_AUTH_CLIENT_*). On Vercel without those credentials,
+                  allowlisted editors use email and password above.
                 </p>
               ) : null}
             </div>

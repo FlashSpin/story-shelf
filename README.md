@@ -37,8 +37,13 @@ edit notes, or remove books — so the next gift is a new story, not a duplicate
 ### Vercel sign-in (email/password — no `GROK_AUTH_*`)
 
 Google/X on Vercel fail with Invalid origin / localhost callback unless a
-production Grok auth client is injected. This app enables **Better Auth
-email/password** so an editor can sign up / sign in without those credentials.
+production Grok auth client is injected. **Preferred long-term path:** deploy
+via the Grok platform so it injects `GROK_AUTH_CLIENT_ID` /
+`GROK_AUTH_CLIENT_SECRET`.
+
+**Vercel fallback:** Better Auth **email/password is editors-only** — no open
+signup. A server gate rejects `/sign-up/email`, `/sign-in/email`, and password
+reset unless the email is in `SHELF_EDITOR_EMAILS`.
 
 1. In Vercel → **Settings** → **Environment Variables**, set at least:
    - `BETTER_AUTH_URL` = `https://story-shelf-six.vercel.app` (no trailing slash)
@@ -47,9 +52,9 @@ email/password** so an editor can sign up / sign in without those credentials.
    - `DATABASE_URL` = a Neon (or other Postgres) connection string
 2. Do **not** set `VITE_AUTH_ENABLED=false` on Production.
 3. Redeploy after changing env vars.
-4. Open `/login` → **Create account** (first time) or **Sign in** with
-   `Mccarlton95@gmail.com` and a password of 8+ characters. The allowlist
-   matches that email (case-insensitive) so Add book unlocks.
+4. Open `/login` → **First-time setup** (once) or **Sign in** with
+   `Mccarlton95@gmail.com` and a password of 8+ characters. Any other email is
+   rejected by the server. The same allowlist unlocks Add book.
 
 **Blocker without `DATABASE_URL`:** Vercel serverless + PGLite-only means users,
 sessions, and books do not survive across instances/cold starts. Provision Neon
