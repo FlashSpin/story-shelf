@@ -2,29 +2,29 @@
 @import "tw-animate-css";
 
 @theme {
-  --color-background: #f3eee4;
-  --color-foreground: #1c1712;
-  --color-card: #faf6ef;
-  --color-card-foreground: #1c1712;
-  --color-muted: #e7dfd2;
-  --color-muted-foreground: #6b6156;
-  --color-primary: #21564a;
-  --color-primary-foreground: #f6f1e8;
-  --color-secondary: #e7dfd2;
-  --color-secondary-foreground: #1c1712;
-  --color-accent: #21564a;
-  --color-accent-foreground: #f6f1e8;
-  --color-destructive: #8f2d2d;
-  --color-destructive-foreground: #faf6ef;
-  --color-border: #ddd3c3;
-  --color-input: #ddd3c3;
-  --color-ring: #21564a;
-  --color-overlay: #1c171280;
-  --color-cover-1: #21564a;
-  --color-cover-2: #3d4f5f;
-  --color-cover-3: #5c4336;
-  --color-cover-4: #4a3f36;
-  --color-cover-5: #35524a;
+  --color-background: #fff8ef;
+  --color-foreground: #1a1625;
+  --color-card: #ffffff;
+  --color-card-foreground: #1a1625;
+  --color-muted: #f3eafc;
+  --color-muted-foreground: #6e6680;
+  --color-primary: #7b4dff;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f3eafc;
+  --color-secondary-foreground: #1a1625;
+  --color-accent: #7b4dff;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #d14343;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e8dff8;
+  --color-input: #e8dff8;
+  --color-ring: #7b4dff;
+  --color-overlay: #1a162580;
+  --color-cover-1: #7b4dff;
+  --color-cover-2: #5b8def;
+  --color-cover-3: #ff7ab8;
+  --color-cover-4: #ffb020;
+  --color-cover-5: #3ecf8e;
 
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", serif;
@@ -40,16 +40,16 @@
   --aspect-cover: 2 / 3;
 
   --shadow-card:
-    0px 0px 0px 1px rgba(28, 23, 18, 0.08),
-    0px 1px 2px -1px rgba(28, 23, 18, 0.06),
-    0px 8px 20px -8px rgba(28, 23, 18, 0.12);
+    0px 0px 0px 1px rgba(26, 22, 37, 0.06),
+    0px 1px 2px -1px rgba(123, 77, 255, 0.08),
+    0px 8px 20px -8px rgba(123, 77, 255, 0.16);
   --shadow-card-hover:
-    0px 0px 0px 1px rgba(28, 23, 18, 0.1),
-    0px 2px 4px -1px rgba(28, 23, 18, 0.08),
-    0px 16px 28px -12px rgba(28, 23, 18, 0.18);
+    0px 0px 0px 1px rgba(26, 22, 37, 0.08),
+    0px 2px 4px -1px rgba(123, 77, 255, 0.1),
+    0px 16px 28px -12px rgba(123, 77, 255, 0.22);
   --shadow-overlay:
-    0px 0px 0px 1px rgba(28, 23, 18, 0.08),
-    0px 24px 48px -16px rgba(28, 23, 18, 0.28);
+    0px 0px 0px 1px rgba(26, 22, 37, 0.08),
+    0px 24px 48px -16px rgba(26, 22, 37, 0.28);
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
