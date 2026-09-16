@@ -67,10 +67,10 @@ function Home() {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary">
-                Family library
+                Raffy's shelf
               </p>
               <h1 className="mt-1 font-display text-4xl font-medium tracking-tight sm:text-5xl">
-                Story Shelf
+                Raffy's bookshelf
               </h1>
               <p className="mt-2 max-w-xl text-sm text-muted-foreground sm:text-base">
                 A shared catalog of books already at home. Search before you buy
@@ -93,7 +93,7 @@ function Home() {
                     onClick={() => setInviteOpen(true)}
                   >
                     <UserPlus />
-                    <span className="hidden sm:inline">Invite editor</span>
+                    <span className="hidden sm:inline">Invite to help</span>
                     <span className="sm:hidden">Invite</span>
                   </Button>
                   <UserButton />
@@ -105,7 +105,7 @@ function Home() {
                 </div>
               ) : (
                 <Button type="button" variant="secondary" asChild>
-                  <Link to="/login">Sign in to edit</Link>
+                  <Link to="/login">Sign in to help</Link>
                 </Button>
               )}
             </div>
@@ -263,7 +263,7 @@ function EmptyState({
         <BookOpen className="size-6" />
       </div>
       <h2 className="mt-5 font-display text-2xl font-medium">
-        {isbnMiss || searching ? "Not on the shelf" : "The shelf is empty"}
+        {isbnMiss || searching ? "Not on the shelf" : "Raffy's shelf is empty"}
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
         {isbnMiss

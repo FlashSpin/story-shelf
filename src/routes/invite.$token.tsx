@@ -69,7 +69,7 @@ function AcceptInvite() {
       <main className="grid min-h-dvh place-items-center px-6 py-12">
         <div className="w-full max-w-sm text-center">
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary">
-            Family library
+            Raffy's shelf
           </p>
           <h1 className="mt-2 font-display text-3xl font-medium tracking-tight">
             Invite unavailable
@@ -83,7 +83,7 @@ function AcceptInvite() {
               to="/"
               className="underline-offset-4 hover:text-foreground hover:underline"
             >
-              Back to the shelf
+              Back to Raffy's shelf
             </Link>
           </p>
         </div>
@@ -146,13 +146,13 @@ function AcceptInvite() {
     <main className="grid min-h-dvh place-items-center px-6 py-12">
       <div className="w-full max-w-sm">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary">
-          Family library
+          Raffy's shelf
         </p>
         <h1 className="mt-2 font-display text-4xl font-medium tracking-tight">
-          Join as editor
+          Join Raffy's shelf
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          You were invited to edit Story Shelf. Choose a password for{" "}
+          You were invited to help with Raffy's shelf. Choose a password for{" "}
           <span className="font-medium text-foreground">{preview.email}</span>.
           Guests stay browse-only — this link is for you only.
         </p>
