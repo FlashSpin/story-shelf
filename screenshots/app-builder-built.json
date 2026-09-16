@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Story Shelf",
+      "hasCanvas": false,
+      "bodyTextLen": 1396,
+      "bodyTextHash": "51554f9f0ee38c0d12cd0bce95508a2bc002d6af8ef5dae52e65f48d2c7bf963",
+      "bodyTextPrefix": "FAMILY LIBRARY Story Shelf A shared catalog of books already at ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Story Shelf",
+      "hasCanvas": false,
+      "bodyTextLen": 1412,
+      "bodyTextHash": "b22281b949186babc66fe4a6ad0a0528b7a32a93479598cd690610c0f2ff682c",
+      "bodyTextPrefix": "FAMILY LIBRARY Story Shelf A shared catalog of books already at ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}

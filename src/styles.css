@@ -1,0 +1,131 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --color-background: #f3eee4;
+  --color-foreground: #1c1712;
+  --color-card: #faf6ef;
+  --color-card-foreground: #1c1712;
+  --color-muted: #e7dfd2;
+  --color-muted-foreground: #6b6156;
+  --color-primary: #21564a;
+  --color-primary-foreground: #f6f1e8;
+  --color-secondary: #e7dfd2;
+  --color-secondary-foreground: #1c1712;
+  --color-accent: #21564a;
+  --color-accent-foreground: #f6f1e8;
+  --color-destructive: #8f2d2d;
+  --color-destructive-foreground: #faf6ef;
+  --color-border: #ddd3c3;
+  --color-input: #ddd3c3;
+  --color-ring: #21564a;
+  --color-overlay: #1c171280;
+  --color-cover-1: #21564a;
+  --color-cover-2: #3d4f5f;
+  --color-cover-3: #5c4336;
+  --color-cover-4: #4a3f36;
+  --color-cover-5: #35524a;
+
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+
+  --aspect-cover: 2 / 3;
+
+  --shadow-card:
+    0px 0px 0px 1px rgba(28, 23, 18, 0.08),
+    0px 1px 2px -1px rgba(28, 23, 18, 0.06),
+    0px 8px 20px -8px rgba(28, 23, 18, 0.12);
+  --shadow-card-hover:
+    0px 0px 0px 1px rgba(28, 23, 18, 0.1),
+    0px 2px 4px -1px rgba(28, 23, 18, 0.08),
+    0px 16px 28px -12px rgba(28, 23, 18, 0.18);
+  --shadow-overlay:
+    0px 0px 0px 1px rgba(28, 23, 18, 0.08),
+    0px 24px 48px -16px rgba(28, 23, 18, 0.28);
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.625rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 3rem;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    min-height: 100dvh;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    text-wrap: balance;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-primary) 22%, transparent);
+    color: var(--color-foreground);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
