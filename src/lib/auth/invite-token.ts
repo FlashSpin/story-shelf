@@ -1,12 +1,12 @@
 /**
- * Invite token minting / hashing (dependency-free — safe for unit tests).
+ * Invite token minting / hashing (Node crypto — server/tests only).
  */
 import { createHash, randomBytes } from "node:crypto";
 
-/** Header the invite accept page sends so the signup gate can verify the token. */
-export const INVITE_TOKEN_HEADER = "x-shelf-invite-token";
-
-export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export {
+  INVITE_TOKEN_HEADER,
+  INVITE_TTL_MS,
+} from "./invite-constants";
 
 export function hashInviteToken(rawToken: string): string {
   return createHash("sha256").update(rawToken, "utf8").digest("hex");

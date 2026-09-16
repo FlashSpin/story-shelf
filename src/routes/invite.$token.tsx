@@ -5,7 +5,7 @@ import {
   authEnabled,
 } from "@/lib/auth/client";
 import { emailAndPasswordEnabled } from "@/lib/auth/email-password";
-import { INVITE_TOKEN_HEADER } from "@/lib/auth/invites.client";
+import { INVITE_TOKEN_HEADER } from "@/lib/auth/invite-constants";
 import { previewEditorInvite } from "@/lib/auth/invites.functions";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { Button } from "@/components/ui/button";
