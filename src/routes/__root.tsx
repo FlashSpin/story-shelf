@@ -25,7 +25,7 @@ export const Route = createRootRoute({
         content:
           "A shared family catalog of books already on the shelf, so the next gift is never a duplicate.",
       },
-      { name: "theme-color", content: "#F3EEE4" },
+      { name: "theme-color", content: "#FFF8EF" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
