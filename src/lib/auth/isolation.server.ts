@@ -1,4 +1,5 @@
 import { getRequest } from "@tanstack/react-start/server";
+import { throwHttpError } from "./throw-http.server";
 
 /**
  * Fetch-Metadata sibling isolation — **server-only** (`.server.ts` suffix).
@@ -48,5 +49,5 @@ export function assertSameSiteRequest(): void {
     dest !== "object" &&
     dest !== "embed";
   if (isTopLevelGet) return;
-  throw new CrossSiteRequestError();
+  throwHttpError(new CrossSiteRequestError());
 }

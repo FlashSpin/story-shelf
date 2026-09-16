@@ -1,4 +1,5 @@
 import { getRequest } from "@tanstack/react-start/server";
+import { throwHttpError } from "./throw-http.server";
 import { gateIdentityEnabled } from "./gate-identity.server";
 import { auth, authConfigured } from "./server";
 
@@ -96,7 +97,7 @@ export async function requireUser(bearerToken?: string): Promise<VerifiedUser> {
     return { id: DEV_USER_ID, email: null };
   }
   const user = await getSessionUser(bearerToken);
-  if (!user) throw new UnauthorizedError();
+  if (!user) throwHttpError(new UnauthorizedError());
   return user;
 }
 
