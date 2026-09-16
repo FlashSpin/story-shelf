@@ -44,7 +44,9 @@ via the Grok platform so it injects `GROK_AUTH_CLIENT_ID` /
 
 **Vercel fallback:** Better Auth **email/password is editors-only** — no open
 signup. A server gate rejects `/sign-up/email`, `/sign-in/email`, and password
-reset unless the email is in `SHELF_EDITOR_EMAILS`.
+reset unless the email is in `SHELF_EDITOR_EMAILS`, already in `shelf_editors`,
+or (sign-up only) presents a valid invite token. `/login` is sign-in only;
+new editors accept an invite at `/invite/<token>`.
 
 1. In Vercel → **Settings** → **Environment Variables**, set at least:
    - `BETTER_AUTH_URL` = `https://story-shelf-six.vercel.app` (no trailing slash)
@@ -53,12 +55,12 @@ reset unless the email is in `SHELF_EDITOR_EMAILS`.
    - `DATABASE_URL` = a Neon (or other Postgres) connection string
 2. Do **not** set `VITE_AUTH_ENABLED=false` on Production.
 3. Redeploy after changing env vars.
-4. Open `/login` → **First-time setup** (once) or **Sign in** with
-   `Mccarlton95@gmail.com` and a password of 8+ characters. That bootstrap
-   email unlocks Add book and **Invite editor**.
-5. To add another editor: signed-in bootstrap editor → **Invite editor** → enter
-   their email → copy the `/invite/<token>` link → they complete first-time
-   setup on that page. Invites are single-use and expire in 7 days.
+4. Open `/login` → **Sign in** with `Mccarlton95@gmail.com` and the password
+   already set for that bootstrap account. That unlocks Add book and
+   **Invite editor**.
+5. To add another editor: signed-in editor → **Invite editor** → enter their
+   email → copy the `/invite/<token>` link → they create their account on that
+   page. Invites are single-use and expire in 7 days.
 
 **Blocker without `DATABASE_URL`:** Vercel serverless + PGLite-only means users,
 sessions, and books do not survive across instances/cold starts. Provision Neon

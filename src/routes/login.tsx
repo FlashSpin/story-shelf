@@ -14,12 +14,8 @@ import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/login")({ component: Login });
 
-type Mode = "sign-in" | "sign-up";
-
 function Login() {
   const { user, isPending } = useCurrentUserState();
-  const [mode, setMode] = useState<Mode>("sign-in");
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -43,20 +39,11 @@ function Login() {
     setError(null);
     setSubmitting(true);
     try {
-      const trimmedEmail = email.trim();
-      const result =
-        mode === "sign-up"
-          ? await authClient.signUp.email({
-              name: name.trim() || trimmedEmail.split("@")[0] || "Editor",
-              email: trimmedEmail,
-              password,
-              callbackURL: "/",
-            })
-          : await authClient.signIn.email({
-              email: trimmedEmail,
-              password,
-              callbackURL: "/",
-            });
+      const result = await authClient.signIn.email({
+        email: email.trim(),
+        password,
+        callbackURL: "/",
+      });
 
       if (result.error) {
         setError(result.error.message || "Sign-in failed. Check email and password.");
@@ -96,52 +83,6 @@ function Login() {
           <div className="mt-8 flex flex-col gap-6">
             {emailAndPasswordEnabled ? (
               <form className="flex flex-col gap-3" onSubmit={onEmailSubmit}>
-                <div className="flex gap-2 text-sm">
-                  <button
-                    type="button"
-                    className={
-                      mode === "sign-in"
-                        ? "font-medium text-foreground underline-offset-4 underline"
-                        : "text-muted-foreground hover:text-foreground"
-                    }
-                    onClick={() => {
-                      setMode("sign-in");
-                      setError(null);
-                    }}
-                  >
-                    Sign in
-                  </button>
-                  <span className="text-muted-foreground">·</span>
-                  <button
-                    type="button"
-                    className={
-                      mode === "sign-up"
-                        ? "font-medium text-foreground underline-offset-4 underline"
-                        : "text-muted-foreground hover:text-foreground"
-                    }
-                    onClick={() => {
-                      setMode("sign-up");
-                      setError(null);
-                    }}
-                  >
-                    Create account
-                  </button>
-                </div>
-
-                {mode === "sign-up" ? (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="login-name">Name</Label>
-                    <Input
-                      id="login-name"
-                      name="name"
-                      autoComplete="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Michael"
-                    />
-                  </div>
-                ) : null}
-
                 <div className="space-y-1.5">
                   <Label htmlFor="login-email">Email</Label>
                   <Input
@@ -162,9 +103,7 @@ function Login() {
                     id="login-password"
                     name="password"
                     type="password"
-                    autoComplete={
-                      mode === "sign-up" ? "new-password" : "current-password"
-                    }
+                    autoComplete="current-password"
                     required
                     minLength={8}
                     value={password}
@@ -184,22 +123,12 @@ function Login() {
                   className="h-12 w-full"
                   disabled={submitting}
                 >
-                  {submitting
-                    ? mode === "sign-up"
-                      ? "Creating editor account…"
-                      : "Signing in…"
-                    : mode === "sign-up"
-                      ? "Create editor account"
-                      : "Sign in with email"}
+                  {submitting ? "Signing in…" : "Sign in with email"}
                 </Button>
 
                 <p className="text-xs text-muted-foreground">
-                  Bootstrap editors use{" "}
-                  <span className="font-medium text-foreground">
-                    SHELF_EDITOR_EMAILS
-                  </span>
-                  . New editors join via a copy-paste invite link from a current
-                  editor — not public signup.
+                  Invite-only: helpers sign in with email here. New accounts are
+                  created from an invite link — not from this page.
                 </p>
               </form>
             ) : null}
@@ -223,9 +152,8 @@ function Login() {
               ))}
               {emailAndPasswordEnabled ? (
                 <p className="text-xs text-muted-foreground">
-                  Preferred long-term: Google via the Grok deployer
-                  (GROK_AUTH_CLIENT_*). On Vercel without those credentials,
-                  allowlisted editors use email and password above.
+                  Google or X may appear when available. Otherwise invited
+                  helpers use email and password above.
                 </p>
               ) : null}
             </div>
