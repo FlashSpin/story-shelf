@@ -52,19 +52,21 @@ export const getBookCover = createServerFn({ method: "GET" })
   });
 
 /** Whether the current session may mutate the shelf (allowlist / auth-off). */
-export const getShelfEditorStatus = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ isEditor: boolean }> => {
-    const { authConfigured, getSessionUser } = await import("@/lib/auth/verify.server");
+export const getShelfEditorStatus = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<{ isEditor: boolean }> => {
+    const { authConfigured } = await import("@/lib/auth/verify.server");
     const { gateIdentityEnabled } = await import("@/lib/auth/gate-identity.server");
     const { isShelfEditorEmail } = await import("@/lib/auth/editor-allowlist.server");
+    // Local auth-off + PGLite: shared DEV_USER may mutate.
     if (!authConfigured && !gateIdentityEnabled()) {
       return { isEditor: true };
     }
-    const user = await getSessionUser();
-    if (!user) return { isEditor: false };
-    return { isEditor: isShelfEditorEmail(user.email) };
-  },
-);
+    // authMiddleware forwards the preview bearer token and verifies the session
+    // (cookie when deployed). Without it, getSessionUser() saw no session and
+    // canEdit stayed false for signed-in editors.
+    return { isEditor: isShelfEditorEmail(context.userEmail) };
+  });
 
 export const searchCatalog = createServerFn({ method: "GET" })
   .validator(z.object({ q: z.string().trim().min(1).max(200) }))
