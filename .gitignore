@@ -6,3 +6,7 @@ dist/
 .DS_Store
 .vercel/output/
 *.log
+
+# Local / scaffold leftovers (see HYGIENE.md)
+.node_modules.lock
+.project_id

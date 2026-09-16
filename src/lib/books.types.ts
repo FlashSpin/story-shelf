@@ -18,7 +18,10 @@ export type Book = {
   title: string;
   authors: string;
   isbn: string | null;
+  /** HTTPS catalog cover for list/grid display. Never a data URL. */
   coverUrl: string | null;
+  /** True when an uploaded cover blob is stored in `cover_data` (not returned in list). */
+  hasCoverUpload: boolean;
   publisher: string | null;
   publishedYear: string | null;
   pageCount: number | null;
