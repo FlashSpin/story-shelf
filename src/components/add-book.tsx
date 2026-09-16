@@ -15,16 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { addBook, lookupIsbn, searchCatalog } from "@/lib/books.functions";
-import { AGE_BANDS, parseAgeBand, type Book, type BookDraft, type BookHit } from "@/lib/books.types";
+import type { Book, BookDraft, BookHit } from "@/lib/books.types";
 import { canonicalIsbn, looksLikeIsbn } from "@/lib/isbn";
 import { cn } from "@/lib/utils";
 
@@ -148,7 +141,7 @@ export function AddBookDialog({
           pageCount: next.pageCount ?? null,
           description: next.description ?? null,
           notes: next.notes ?? null,
-          ageBand: parseAgeBand(next.ageBand),
+          ageBand: null,
         },
       });
       if (!result.ok) {
@@ -449,30 +442,6 @@ export function AddBookDialog({
                       }
                     />
                   </div>
-                </div>
-                <div className="grid gap-1.5">
-                  <Label>Reading level</Label>
-                  <Select
-                    value={draft.ageBand ?? "none"}
-                    onValueChange={(value) =>
-                      setDraft((d) => ({
-                        ...d,
-                        ageBand: value === "none" ? null : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger aria-label="Reading level">
-                      <SelectValue placeholder="Optional" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Unspecified</SelectItem>
-                      {AGE_BANDS.map((band) => (
-                        <SelectItem key={band} value={band}>
-                          {band}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="book-notes">Shelf note</Label>

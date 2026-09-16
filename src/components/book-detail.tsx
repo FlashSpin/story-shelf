@@ -23,17 +23,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useShelfEditorAccess } from "@/lib/auth/use-shelf-editor";
 import { getBookCover, removeBook, updateBook, updateCover } from "@/lib/books.functions";
-import { AGE_BANDS, parseAgeBand, type Book } from "@/lib/books.types";
+import { parseAgeBand, type Book } from "@/lib/books.types";
 import { formatIsbn } from "@/lib/isbn";
 
 export function BookDetail({
@@ -48,7 +41,6 @@ export function BookDetail({
   const router = useRouter();
   const { canEdit, isPending } = useShelfEditorAccess();
   const [notes, setNotes] = useState(book?.notes ?? "");
-  const [ageBand, setAgeBand] = useState(book?.ageBand ?? "");
   const [localCover, setLocalCover] = useState<string | null>(null);
   const [uploadedCover, setUploadedCover] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -56,7 +48,6 @@ export function BookDetail({
 
   useEffect(() => {
     setNotes(book?.notes ?? "");
-    setAgeBand(book?.ageBand ?? "");
   }, [book]);
 
   useEffect(() => {
@@ -76,9 +67,7 @@ export function BookDetail({
     };
   }, [book?.id, book?.hasCoverUpload]);
 
-  const dirty =
-    Boolean(book) &&
-    (notes !== (book?.notes ?? "") || ageBand !== (book?.ageBand ?? ""));
+  const dirty = Boolean(book) && notes !== (book?.notes ?? "");
 
   async function save() {
     if (!book) return;
@@ -88,7 +77,7 @@ export function BookDetail({
         data: {
           id: book.id,
           notes: notes.trim() ? notes : null,
-          ageBand: parseAgeBand(ageBand),
+          ageBand: parseAgeBand(book.ageBand),
         },
       });
       await router.invalidate({ sync: true });
@@ -175,7 +164,6 @@ export function BookDetail({
                 )}
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-wrap gap-2">
-                    {book.ageBand ? <Badge>{book.ageBand}</Badge> : null}
                     {book.publishedYear ? (
                       <Badge variant="muted">{book.publishedYear}</Badge>
                     ) : null}
@@ -206,27 +194,6 @@ export function BookDetail({
                   ) : null}
                   {canEdit ? (
                     <>
-                      <div className="grid gap-1.5">
-                        <Label>Reading level</Label>
-                        <Select
-                          value={ageBand || "none"}
-                          onValueChange={(value) =>
-                            setAgeBand(value === "none" ? "" : value)
-                          }
-                        >
-                          <SelectTrigger aria-label="Reading level">
-                            <SelectValue placeholder="Unspecified" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Unspecified</SelectItem>
-                            {AGE_BANDS.map((band) => (
-                              <SelectItem key={band} value={band}>
-                                {band}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
                       <div className="grid gap-1.5">
                         <Label htmlFor="detail-notes">Shelf note</Label>
                         <Textarea
