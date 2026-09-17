@@ -1,5 +1,10 @@
 import type { Book } from "./books.types.ts";
-import { canonicalIsbn, looksLikeIsbn } from "./isbn.ts";
+import {
+  canonicalIsbn,
+  extractIsbnFromUrl,
+  looksLikeIsbn,
+  looksLikeUrl,
+} from "./isbn.ts";
 import type { WishlistItem } from "./wishlist.types.ts";
 
 export type GiftCheckHit = {
@@ -19,6 +24,7 @@ export type GiftCheckResult =
   | { status: "owned"; hit: GiftCheckHit }
   | { status: "wishlist"; hit: GiftCheckHit }
   | { status: "missing"; query: string }
+  | { status: "no-isbn"; query: string }
   | { status: "ambiguous"; hits: RankedHit[] };
 
 function bookToHit(book: Book): GiftCheckHit {
@@ -88,7 +94,20 @@ function collectTitleHits(
   return ranked;
 }
 
-/** Resolve gift-check: empty → null; ISBN clear; title may be ambiguous (≤3). */
+function resolveByIsbn(
+  isbn: string,
+  books: Book[],
+  wishlist: WishlistItem[],
+  displayQuery: string,
+): GiftCheckResult {
+  const owned = books.find((b) => isbnEquals(b.isbn, isbn));
+  if (owned) return { status: "owned", hit: bookToHit(owned) };
+  const wished = wishlist.find((w) => isbnEquals(w.isbn, isbn));
+  if (wished) return { status: "wishlist", hit: wishToHit(wished) };
+  return { status: "missing", query: displayQuery };
+}
+
+/** Resolve gift-check: empty → null; URL/ISBN clear; title may be ambiguous (≤3). */
 export function resolveGiftCheck(
   query: string,
   books: Book[],
@@ -97,12 +116,14 @@ export function resolveGiftCheck(
   const q = query.trim();
   if (!q) return null;
 
+  if (looksLikeUrl(q)) {
+    const isbn = extractIsbnFromUrl(q);
+    if (!isbn) return { status: "no-isbn", query: q };
+    return resolveByIsbn(isbn, books, wishlist, isbn);
+  }
+
   if (looksLikeIsbn(q)) {
-    const owned = books.find((b) => isbnEquals(b.isbn, q));
-    if (owned) return { status: "owned", hit: bookToHit(owned) };
-    const wished = wishlist.find((w) => isbnEquals(w.isbn, q));
-    if (wished) return { status: "wishlist", hit: wishToHit(wished) };
-    return { status: "missing", query: q };
+    return resolveByIsbn(q, books, wishlist, q);
   }
 
   const ranked = collectTitleHits(books, wishlist, q);

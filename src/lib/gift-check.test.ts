@@ -73,3 +73,45 @@ describe("resolveGiftCheck", () => {
     }
   });
 });
+
+describe("resolveGiftCheck URLs", () => {
+  it("resolves Amazon /dp/ ISBN-10 to owned", () => {
+    const owned = book({ id: 1, title: "Caterpillar", isbn: "9780399226908" });
+    // 0399226907 is ISBN-10 for 9780399226908
+    const result = resolveGiftCheck(
+      "https://www.amazon.com/Very-Hungry-Caterpillar/dp/0399226907",
+      [owned],
+      [],
+    );
+    assert.equal(result?.status, "owned");
+  });
+
+  it("marks Amazon URL ISBN as missing when not on shelf", () => {
+    const result = resolveGiftCheck(
+      "https://www.amazon.co.uk/dp/9780140328721",
+      [],
+      [],
+    );
+    assert.equal(result?.status, "missing");
+  });
+
+  it("returns no-isbn for Kindle ASIN links (not a false gift idea)", () => {
+    const result = resolveGiftCheck(
+      "https://www.amazon.com/Some-Kindle-Book/dp/B08N5WRWNW",
+      [],
+      [],
+    );
+    assert.equal(result?.status, "no-isbn");
+  });
+
+  it("returns no-isbn for short links without ISBN", () => {
+    const result = resolveGiftCheck("https://amzn.to/3abcXYZ", [], []);
+    assert.equal(result?.status, "no-isbn");
+  });
+
+  it("still accepts plain ISBN paste", () => {
+    const owned = book({ id: 1, title: "Moon", isbn: "9780140328721" });
+    const result = resolveGiftCheck("978-0-14-032872-1", [owned], []);
+    assert.equal(result?.status, "owned");
+  });
+});
