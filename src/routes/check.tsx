@@ -35,7 +35,7 @@ export const Route = createFileRoute("/check")({
       {
         name: "description",
         content:
-          "Search or type an ISBN before you buy — check Raffy’s shelf and wishlist in one place.",
+          "Paste an Amazon link or ISBN before you buy — check Raffy’s shelf and wishlist in one place.",
       },
     ],
   }),
@@ -80,7 +80,7 @@ function HeaderBlock() {
         Already on Raffy’s shelf?
       </h1>
       <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-        Search or type an ISBN before you buy
+        Paste an Amazon link or ISBN before you buy
       </p>
     </div>
   );
@@ -134,9 +134,9 @@ function GiftCheckPage() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Title, author, or ISBN"
+            placeholder="Amazon link, ISBN, or title"
             className="h-14 rounded-2xl border-transparent bg-muted pl-12 text-base shadow-none focus-visible:border-primary/30 focus-visible:ring-primary/20"
-            aria-label="Search shelf or wishlist"
+            aria-label="Paste Amazon link, ISBN, or search"
             autoFocus
             inputMode="search"
             autoComplete="off"
@@ -189,6 +189,30 @@ function GiftCheckPage() {
 function ResultPanel({ result }: { result: GiftCheckResult }) {
   if (result.status === "ambiguous") {
     return <AmbiguousList hits={result.hits} />;
+  }
+  if (result.status === "no-isbn") {
+    return (
+      <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+        <div className="bg-muted/80 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Link not usable
+          </p>
+          <p className="mt-1 font-display text-xl font-medium">
+            Couldn’t find an ISBN in that link
+          </p>
+        </div>
+        <div className="flex items-start gap-3 px-4 py-4">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+            <Search className="size-5" />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Try a product page that shows an ISBN in the address, paste the ISBN
+            itself, or search by title. Short links and Kindle pages often don’t
+            include one.
+          </p>
+        </div>
+      </article>
+    );
   }
   if (result.status === "missing") {
     return (
