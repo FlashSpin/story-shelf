@@ -43,7 +43,7 @@ export const listBooks = createServerFn({ method: "GET" }).handler(
   },
 );
 
-/** Fetch uploaded cover bytes for detail view (omitted from list payloads). */
+/** Fetch legacy data-URL cover for detail view (omitted from list). Blob uploads are HTTPS on coverUrl. */
 export const getBookCover = createServerFn({ method: "GET" })
   .validator(z.object({ id: z.number().int().positive() }))
   .handler(async ({ data }): Promise<string | null> => {
@@ -97,7 +97,7 @@ export const addBook = createServerFn({ method: "POST" })
       const existing = await findBookByIsbn(data.isbn);
       if (existing) return { ok: false, reason: "duplicate", existing };
     }
-    // Keep HTTPS catalog covers in coverUrl; uploaded data URLs stay in coverData.
+    // Catalog HTTPS → coverUrl; uploads → Vercel Blob HTTPS (or legacy coverData locally).
     const book = await insertBook({
       ...data,
       coverUrl: data.coverUrl,

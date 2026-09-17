@@ -2,6 +2,10 @@ import { getSql } from "@/lib/db";
 import { canonicalIsbn } from "@/lib/isbn";
 import type { Book, BookDraft, BookHit } from "@/lib/books.types";
 import { isCoverDataUrl, publicListCoverUrl } from "@/lib/cover-image";
+import {
+  resolveCoverFields,
+  resolveCoverUpdate,
+} from "@/lib/cover-blob.server";
 
 type BookRow = {
   id: number;
@@ -44,8 +48,9 @@ function mapBook(row: BookRow): Book {
 }
 
 /**
- * List/detail SELECT: never pulls `cover_data` bytes. HTTPS covers stay in
- * `cover_url`; uploads live in `cover_data` and surface only as `has_cover_data`.
+ * List/detail SELECT: never pulls `cover_data` bytes. HTTPS covers (catalog or
+ * Vercel Blob) stay in `cover_url`; legacy data-URL uploads live in `cover_data`
+ * and surface only as `has_cover_data`.
  */
 const SELECT = `
   id, title, authors, isbn,
@@ -86,7 +91,7 @@ export async function findBookById(id: number): Promise<Book | null> {
   return rows[0] ? mapBook(rows[0]) : null;
 }
 
-/** Uploaded cover data-URL for detail display (not included in list payloads). */
+/** Legacy uploaded cover data-URL for detail display (not included in list payloads). New uploads use HTTPS cover_url via Vercel Blob. */
 export async function getBookCoverData(id: number): Promise<string | null> {
   const sql = await getSql();
   const rows = await sql.query<{ cover_data: string | null }>(
@@ -97,20 +102,12 @@ export async function getBookCoverData(id: number): Promise<string | null> {
   return value && isCoverDataUrl(value) ? value : null;
 }
 
-function splitCoverFields(draft: BookDraft): {
-  coverUrl: string | null;
-  coverData: string | null;
-} {
-  const coverData =
-    draft.coverData && isCoverDataUrl(draft.coverData) ? draft.coverData : null;
-  // Prefer explicit HTTPS catalog URL; never persist data URLs in cover_url.
-  const coverUrl = publicListCoverUrl(draft.coverUrl);
-  return { coverUrl, coverData };
-}
-
 export async function insertBook(draft: BookDraft): Promise<Book> {
   const isbn = draft.isbn ? canonicalIsbn(draft.isbn) : null;
-  const { coverUrl, coverData } = splitCoverFields(draft);
+  const { coverUrl, coverData } = await resolveCoverFields({
+    coverUrl: draft.coverUrl,
+    coverData: draft.coverData,
+  });
   const sql = await getSql();
   const rows = await sql.query<BookRow>(
     `insert into books (
@@ -157,11 +154,20 @@ export async function updateBookCover(
   coverData: string,
 ): Promise<Book | null> {
   if (!isCoverDataUrl(coverData)) return null;
+  const resolved = await resolveCoverUpdate(coverData);
   const sql = await getSql();
-  // Store uploads in cover_data; leave HTTPS cover_url as list/grid fallback.
+  // Blob path: store HTTPS URL in cover_url and clear legacy cover_data.
+  // Local fallback without BLOB_READ_WRITE_TOKEN: keep cover_data only.
   const rows = await sql.query<BookRow>(
-    `update books set cover_data = $2 where id = $1 returning ${SELECT}`,
-    [id, coverData],
+    resolved.coverUrl
+      ? `update books
+            set cover_url = $2, cover_data = null
+          where id = $1
+          returning ${SELECT}`
+      : `update books set cover_data = $2 where id = $1 returning ${SELECT}`,
+    resolved.coverUrl
+      ? [id, resolved.coverUrl]
+      : [id, resolved.coverData],
   );
   return rows[0] ? mapBook(rows[0]) : null;
 }
