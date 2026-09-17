@@ -151,27 +151,69 @@ export function stripInstallParams(url) {
   return rest ? `${path}?${rest}` : path;
 }
 
-export function renderInstallPageHtml(template, { host, url } = {}) {
+/** Normalize "#abc" / "aabbcc" / "#aabbcc" to "#aabbcc", or fallback. */
+function normalizeHexColor(value, fallback = "#000000") {
+  const raw = String(value ?? "").trim();
+  if (!raw) return fallback;
+  const hex = raw.startsWith("#") ? raw.slice(1) : raw;
+  if (/^[0-9a-fA-F]{6}$/.test(hex)) return `#${hex}`;
+  if (/^[0-9a-fA-F]{3}$/.test(hex)) {
+    return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+  }
+  return fallback;
+}
+
+export function renderInstallPageHtml(template, { host, url, site } = {}) {
+  const resolvedSite = site ?? readOgSite();
+  const appName = resolveOgTitle(resolvedSite, DEFAULT_APP_NAME, host);
   return String(template)
-    .replaceAll("{{APP_NAME}}", escapeHtml(appNameFromHost(host)))
+    .replaceAll("{{APP_NAME}}", escapeHtml(appName))
     .replaceAll("{{APP_URL}}", escapeHtml(stripInstallParams(url)));
 }
 
-export function renderWebManifest(hostHeader) {
-  const name = appNameFromHost(hostHeader);
+export function renderWebManifest(hostHeader, site) {
+  const resolvedSite = site ?? readOgSite();
+  const name = resolveOgTitle(resolvedSite, DEFAULT_APP_NAME, hostHeader);
+  const shortName = String(resolvedSite.short_name ?? "").trim() || name;
+  const themeColor = normalizeHexColor(
+    resolvedSite.theme_color ?? resolvedSite.color,
+    "#000000",
+  );
+  const backgroundColor = normalizeHexColor(
+    resolvedSite.background_color,
+    themeColor,
+  );
   return JSON.stringify(
     {
       name,
-      short_name: name,
+      short_name: shortName,
       id: "/",
       start_url: "/",
       scope: "/",
       display: "standalone",
-      background_color: "#000000",
-      theme_color: "#000000",
+      background_color: backgroundColor,
+      theme_color: themeColor,
       icons: [
         {
-          src: "/__grok/icon-180.png",
+          src: "/icon-192.png",
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "any",
+        },
+        {
+          src: "/icon-512.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any",
+        },
+        {
+          src: "/icon-512.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "maskable",
+        },
+        {
+          src: "/apple-touch-icon.png",
           sizes: "180x180",
           type: "image/png",
         },
@@ -182,21 +224,22 @@ export function renderWebManifest(hostHeader) {
   );
 }
 
-export function grokPwaHeadTags(appName = DEFAULT_APP_NAME) {
+export function grokPwaHeadTags(appName = DEFAULT_APP_NAME, themeColor = "#000000") {
+  const color = escapeHtml(normalizeHexColor(themeColor, "#000000"));
   return [
     // Standalone display comes from the manifest ("display": "standalone");
     // the legacy *-web-app-capable metas it replaces are deliberately absent.
     ["manifest", '<link rel="manifest" href="/__grok/manifest.webmanifest">'],
-    ["apple-touch-icon", '<link rel="apple-touch-icon" href="/__grok/icon-180.png">'],
+    ["apple-touch-icon", '<link rel="apple-touch-icon" href="/apple-touch-icon.png">'],
     [
       "apple-mobile-web-app-title",
       `<meta name="apple-mobile-web-app-title" content="${escapeHtml(appName)}">`,
     ],
     [
       "apple-mobile-web-app-status-bar-style",
-      '<meta name="apple-mobile-web-app-status-bar-style" content="black">',
+      '<meta name="apple-mobile-web-app-status-bar-style" content="default">',
     ],
-    ["theme-color", '<meta name="theme-color" content="#000000">'],
+    ["theme-color", `<meta name="theme-color" content="${color}">`],
   ];
 }
 
@@ -434,10 +477,19 @@ export function injectGrokPwaHead(html, ctx = {}) {
   );
   let next = stripShareMetaTags(html);
 
-  const missing = grokPwaHeadTags(appName)
+  const themeColor = normalizeHexColor(
+    site.theme_color ?? site.color,
+    "#000000",
+  );
+  const missing = grokPwaHeadTags(appName, themeColor)
     .filter(([key]) => {
       if (key === "manifest") return !next.includes('href="/__grok/manifest.webmanifest"');
-      if (key === "apple-touch-icon") return !next.includes('href="/__grok/icon-180.png"');
+      if (key === "apple-touch-icon") {
+        return (
+          !next.includes('href="/apple-touch-icon.png"') &&
+          !next.includes('href="/__grok/icon-180.png"')
+        );
+      }
       return !next.includes(`name="${key}"`);
     })
     .map(([, tag]) => tag);

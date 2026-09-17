@@ -460,7 +460,7 @@ test("rejects hosts that are not plain slugs", () => {
 });
 
 test("renders install page markup", () => {
-  const html = renderInstallPage("wild-race.grok.me", "/?install=1&platform=ios");
+  const html = renderInstallPage("wild-race.grok.me", "/?install=1&platform=ios", {});
   assert.match(html, /Add Wild Race to your/);
   assert.match(html, /\/__grok\/install\/styles\.css/);
   assert.match(html, /href="\/"/);
@@ -469,15 +469,34 @@ test("renders install page markup", () => {
 });
 
 test("escapes host-derived values in the install page", () => {
-  const html = renderInstallPage("<script>alert(1)</script>", "/?install=1&platform=ios");
+  const html = renderInstallPage("<script>alert(1)</script>", "/?install=1&platform=ios", {});
   assert.equal(html.includes("<script>alert(1)</script>"), false);
 });
 
 test("renders the manifest with the per-app name", () => {
-  const manifest = JSON.parse(renderWebManifest("wild-race.grok.me"));
+  const manifest = JSON.parse(renderWebManifest("wild-race.grok.me", {}));
   assert.equal(manifest.name, "Wild Race");
   assert.equal(manifest.short_name, "Wild Race");
-  assert.equal(manifest.icons[0].src, "/__grok/icon-180.png");
+  assert.equal(manifest.icons[0].src, "/icon-192.png");
+  assert.equal(manifest.icons[1].src, "/icon-512.png");
+});
+
+test("prefers site.json title and short_name for the manifest", () => {
+  const manifest = JSON.parse(
+    renderWebManifest("story-shelf-six.vercel.app", {
+      title: "Raffy's bookshelf",
+      short_name: "Raffy's shelf",
+      theme_color: "#FFF8EF",
+      background_color: "#FFF8EF",
+    }),
+  );
+  assert.equal(manifest.name, "Raffy's bookshelf");
+  assert.equal(manifest.short_name, "Raffy's shelf");
+  assert.equal(manifest.theme_color, "#FFF8EF");
+  assert.equal(manifest.background_color, "#FFF8EF");
+  assert.ok(manifest.icons.some((icon) => icon.src === "/icon-192.png"));
+  assert.ok(manifest.icons.some((icon) => icon.src === "/icon-512.png"));
+  assert.ok(manifest.icons.some((icon) => icon.src === "/apple-touch-icon.png"));
 });
 
 // Tripwires: the deployed-app path only works if Nitro scans server/ — an
