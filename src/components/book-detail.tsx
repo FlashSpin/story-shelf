@@ -33,13 +33,17 @@ export function BookDetail({
   book,
   onOpenChange,
   onBookChange,
+  readOnly = false,
 }: {
   book: Book | null;
   onOpenChange: (open: boolean) => void;
   onBookChange?: (book: Book) => void;
+  /** Force browse-only chrome (share links) — never escalate to edit UI. */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
-  const { canEdit, isPending } = useShelfEditorAccess();
+  const { canEdit: editorCanEdit, isPending } = useShelfEditorAccess();
+  const canEdit = !readOnly && editorCanEdit;
   const [notes, setNotes] = useState(book?.notes ?? "");
   const [localCover, setLocalCover] = useState<string | null>(null);
   const [uploadedCover, setUploadedCover] = useState<string | null>(null);
@@ -226,6 +230,13 @@ export function BookDetail({
                         </Button>
                       </div>
                     </>
+                  ) : readOnly ? (
+                    book.notes ? (
+                      <p className="text-sm">
+                        <span className="font-medium">Shelf note: </span>
+                        {book.notes}
+                      </p>
+                    ) : null
                   ) : !isPending ? (
                     <p className="text-sm text-muted-foreground">
                       Sign in to upload a cover photo or edit this book.

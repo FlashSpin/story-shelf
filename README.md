@@ -7,6 +7,9 @@ edit notes, or remove books — so the next gift is a new story, not a duplicate
 ## Features
 
 - Browse the family shelf (title / author / ISBN search)
+- **Shareable browse** (`/share`, `/share/wishlist`) — clean read-only link for
+  relatives: shelf covers + search, wishlist, gift-check CTA, recently added.
+  No Add / Invite / Sign in chrome. Editors can **Copy share link** from home.
 - **Gift check** (`/check`) — guests ask “Already on Raffy’s shelf?” with one
   clear owned / wishlist / not-on-shelf card (Amazon or bookshop URL, ISBN, or
   title; barcode scan when the browser supports it). Links without an ISBN get
@@ -110,7 +113,9 @@ Do not commit secrets in `.env` — keep using platform-injected env in deploy.
 ## Auth model
 
 - **Public:** `listBooks`, `listWishlist`, book detail cover fetch (`getBookCover`),
-  browsing UI, `previewEditorInvite` (token validation only)
+  browsing UI (`/`, `/share`, `/share/wishlist`, `/check`), `previewEditorInvite`
+  (token validation only). Share routes are read-only chrome only — mutations
+  still require an editor session.
 - **Signed-in:** `searchCatalog`, `lookupIsbn` (catalog proxies)
 - **Editors** (env bootstrap **or** `shelf_editors` after invite): `addBook`,
   `updateBook`, `updateCover`, `removeBook`, `addWishlistItem`,
@@ -118,7 +123,8 @@ Do not commit secrets in `.env` — keep using platform-injected env in deploy.
 - Invite accept: `/invite/$token` → email/password sign-up with
   `x-shelf-invite-token`; server verifies the token before granting editor
 - The home page gates “Add book” / “Invite editor” behind editor access; guests
-  stay browse-only.
+  stay browse-only. Send relatives `https://story-shelf-six.vercel.app/share`
+  (not `/`) so they land on the gift-focused view without editor CTAs.
 
 ## Develop
 

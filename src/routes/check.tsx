@@ -90,7 +90,7 @@ function FooterLinks() {
   return (
     <footer className="mt-10 text-center text-sm text-muted-foreground">
       <Link
-        to="/"
+        to="/share"
         className="underline-offset-4 hover:text-foreground hover:underline"
       >
         Raffy’s shelf
@@ -99,7 +99,7 @@ function FooterLinks() {
         ·
       </span>
       <Link
-        to="/wishlist"
+        to="/share/wishlist"
         className="underline-offset-4 hover:text-foreground hover:underline"
       >
         Wishlist
