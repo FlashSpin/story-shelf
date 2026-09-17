@@ -1,24 +1,28 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BookOpen, Link2, Plus, Search, UserPlus } from "lucide-react";
-import { toast } from "sonner";
-import { AddBookDialog } from "@/components/add-book";
-import { InviteEditorDialog } from "@/components/invite-editor";
+import { BookOpen, Gift, Search } from "lucide-react";
 import { BookCover } from "@/components/book-cover";
 import { BookDetail } from "@/components/book-detail";
 import { RecentlyAddedStrip } from "@/components/recently-added";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserButton } from "@/lib/auth/gates";
-import { useShelfEditorAccess } from "@/lib/auth/use-shelf-editor";
 import { listBooks } from "@/lib/books.functions";
 import type { Book } from "@/lib/books.types";
 import { canonicalIsbn, looksLikeIsbn } from "@/lib/isbn";
-import { copyShareUrl } from "@/lib/share-url";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/share/")({
   loader: () => listBooks(),
-  component: Home,
+  head: () => ({
+    meta: [
+      { title: "Raffy’s bookshelf · share" },
+      {
+        name: "description",
+        content:
+          "Browse Raffy’s owned books and wishlist — check before you buy a gift. Read-only family view.",
+      },
+    ],
+  }),
+  component: ShareShelf,
 });
 
 function matchesQuery(book: Book, query: string): boolean {
@@ -35,12 +39,9 @@ function matchesQuery(book: Book, query: string): boolean {
   return hay.includes(q);
 }
 
-function Home() {
+function ShareShelf() {
   const books = Route.useLoaderData();
-  const { user, canEdit, isPending } = useShelfEditorAccess();
   const [query, setQuery] = useState("");
-  const [addOpen, setAddOpen] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
   const [selected, setSelected] = useState<Book | null>(null);
 
   const filtered = useMemo(() => {
@@ -62,84 +63,31 @@ function Home() {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary">
-                Raffy's shelf
+                Family browse
               </p>
               <h1 className="mt-1 font-display text-4xl font-medium tracking-tight sm:text-5xl">
-                Raffy's bookshelf
+                Raffy’s bookshelf
               </h1>
               <p className="mt-2 max-w-xl text-sm text-muted-foreground sm:text-base">
-                A shared catalog of books already at home. Search before you buy
-                so the next gift is a new story, not a duplicate.
+                Books already at home. Search the shelf or gift-check a title
+                before you buy — so the next story is new.
               </p>
-              {!user && !isPending ? (
-                <p className="mt-2 text-sm">
-                  <Link
-                    to="/check"
-                    className="text-primary underline-offset-4 hover:underline"
-                  >
-                    Shopping for a gift? Check before you buy
+              <p className="mt-3">
+                <Button type="button" size="sm" asChild>
+                  <Link to="/check">
+                    <Gift />
+                    Check before you buy
                   </Link>
-                </p>
-              ) : null}
-              <nav className="mt-4 flex flex-wrap gap-2">
+                </Button>
+              </p>
+              <nav className="mt-4 flex flex-wrap gap-2" aria-label="Share views">
                 <Button type="button" variant="outline" size="sm" disabled>
-                  Raffy's shelf
+                  Raffy’s shelf
                 </Button>
                 <Button type="button" variant="secondary" size="sm" asChild>
-                  <Link to="/wishlist">Wishlist</Link>
+                  <Link to="/share/wishlist">Wishlist</Link>
                 </Button>
               </nav>
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-2">
-              {isPending ? (
-                <div className="h-11 w-36 animate-pulse rounded-lg bg-muted" />
-              ) : canEdit ? (
-                <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
-                  <Button type="button" onClick={() => setAddOpen(true)}>
-                    <Plus />
-                    <span className="hidden sm:inline">Add book</span>
-                    <span className="sm:hidden">Add</span>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setInviteOpen(true)}
-                  >
-                    <UserPlus />
-                    <span className="hidden sm:inline">Invite to help</span>
-                    <span className="sm:hidden">Invite</span>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      void copyShareUrl()
-                        .then((url) => {
-                          toast.success("Share link copied", {
-                            description: url,
-                          });
-                        })
-                        .catch(() => {
-                          toast.error("Could not copy the share link.");
-                        });
-                    }}
-                  >
-                    <Link2 />
-                    <span className="hidden sm:inline">Copy share link</span>
-                    <span className="sm:hidden">Share</span>
-                  </Button>
-                  <UserButton />
-                </div>
-              ) : user ? (
-                <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
-                  <p className="text-xs text-muted-foreground">Browse only</p>
-                  <UserButton />
-                </div>
-              ) : (
-                <Button type="button" variant="secondary" asChild>
-                  <Link to="/login">Sign in to help</Link>
-                </Button>
-              )}
             </div>
           </div>
 
@@ -154,13 +102,11 @@ function Home() {
                 aria-label="Search the shelf"
               />
             </div>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground tabular-nums">
-                {filtered.length === books.length
-                  ? `${books.length} ${books.length === 1 ? "book" : "books"} on the shelf`
-                  : `${filtered.length} of ${books.length}`}
-              </p>
-            </div>
+            <p className="text-sm text-muted-foreground tabular-nums">
+              {filtered.length === books.length
+                ? `${books.length} ${books.length === 1 ? "book" : "books"} on the shelf`
+                : `${filtered.length} of ${books.length}`}
+            </p>
           </div>
         </div>
       </header>
@@ -175,18 +121,17 @@ function Home() {
             <p className="text-xs font-medium uppercase tracking-[0.16em] opacity-80">
               Already owned
             </p>
-            <p className="mt-1 font-display text-xl font-medium">{isbnOwned.title}</p>
+            <p className="mt-1 font-display text-xl font-medium">
+              {isbnOwned.title}
+            </p>
             <p className="text-sm opacity-80">{isbnOwned.authors}</p>
           </div>
         ) : null}
 
         {empty ? (
-          <EmptyState
+          <EmptyShareState
             query={query}
             isbnMiss={Boolean(isbnQuery && !isbnOwned)}
-            canEdit={canEdit}
-            isPending={isPending}
-            onAdd={() => setAddOpen(true)}
           />
         ) : (
           <ul className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 sm:gap-x-5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -218,37 +163,23 @@ function Home() {
         )}
       </main>
 
-      <AddBookDialog
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        books={books}
-        initialQuery={empty && query ? query : ""}
-        onOpenExisting={(book) => setSelected(book)}
-      />
-      <InviteEditorDialog open={inviteOpen} onOpenChange={setInviteOpen} />
       <BookDetail
         book={selected}
+        readOnly
         onOpenChange={(open) => {
           if (!open) setSelected(null);
         }}
-        onBookChange={setSelected}
       />
     </div>
   );
 }
 
-function EmptyState({
+function EmptyShareState({
   query,
   isbnMiss,
-  canEdit,
-  isPending,
-  onAdd,
 }: {
   query: string;
   isbnMiss: boolean;
-  canEdit: boolean;
-  isPending: boolean;
-  onAdd: () => void;
 }) {
   const searching = query.trim().length > 0;
   return (
@@ -257,25 +188,26 @@ function EmptyState({
         <BookOpen className="size-6" />
       </div>
       <h2 className="mt-5 font-display text-2xl font-medium">
-        {isbnMiss || searching ? "Not on the shelf" : "Raffy's shelf is empty"}
+        {isbnMiss || searching ? "Not on the shelf" : "Raffy’s shelf is empty"}
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
         {isbnMiss
-          ? "This ISBN is not in the family catalog. It may make a good gift — or add it if you just brought it home."
+          ? "This ISBN is not in the family catalog — it may make a good gift."
           : searching
             ? "Nothing here matches that search. If you are shopping, this title is likely a new story."
-            : "Add the books already at home so family can check before they buy."}
+            : "Nothing listed yet. Try the wishlist or gift check."}
       </p>
-      {isPending ? null : canEdit ? (
-        <Button type="button" className="mt-6" onClick={onAdd}>
-          <Plus />
-          Add a book
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <Button type="button" asChild>
+          <Link to="/check">
+            <Gift />
+            Gift check
+          </Link>
         </Button>
-      ) : (
-        <Button type="button" className="mt-6" variant="secondary" asChild>
-          <Link to="/login">Sign in to add</Link>
+        <Button type="button" variant="secondary" asChild>
+          <Link to="/share/wishlist">Wishlist</Link>
         </Button>
-      )}
+      </div>
     </div>
   );
 }
