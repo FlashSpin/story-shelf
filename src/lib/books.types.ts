@@ -18,9 +18,9 @@ export type Book = {
   title: string;
   authors: string;
   isbn: string | null;
-  /** HTTPS catalog cover for list/grid display. Never a data URL. */
+  /** HTTPS cover for list/grid (catalog or Vercel Blob). Never a data URL. */
   coverUrl: string | null;
-  /** True when an uploaded cover blob is stored in `cover_data` (not returned in list). */
+  /** True when a legacy data-URL cover is still in `cover_data` (not returned in list). New uploads use HTTPS `coverUrl` via Vercel Blob. */
   hasCoverUpload: boolean;
   publisher: string | null;
   publishedYear: string | null;

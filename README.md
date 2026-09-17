@@ -41,6 +41,7 @@ edit notes, or remove books — so the next gift is a new story, not a duplicate
 | `SHELF_EDITOR_EMAILS` | Bootstrap editor emails (case-insensitive, trimmed). **Fail closed** with no env and no invited `shelf_editors` rows. Invited editors are stored in the DB after they accept a link — they do not need to stay on this list. |
 | `GROK_AUTH_CLIENT_ID` / `GROK_AUTH_CLIENT_SECRET` | Optional. Injected by the **Grok deployer** for Google/X via `auth.grok.me`. Not available for manual Vercel deploys; without them, use email/password on `/login`. The baked preview client only works for `*.grok-sandbox.com`. |
 | `GROK_PROJECT_ID` | Set by the Grok deploy platform; absence means workspace preview. |
+| `BLOB_READ_WRITE_TOKEN` | **Required on Vercel for cover photo uploads.** Read-write token from a **public** Vercel Blob store (Storage → Blob). Without it, new uploads fall back to storing data URLs in Postgres (`cover_data`) — fine locally, not for production scale. Guests only need the public HTTPS URL; they never write. |
 
 ### Vercel sign-in (email/password — no `GROK_AUTH_*`)
 
@@ -60,6 +61,7 @@ new editors accept an invite at `/invite/<token>`.
    - `BETTER_AUTH_SECRET` = a long random string (e.g. `openssl rand -hex 32`)
    - `SHELF_EDITOR_EMAILS` = `Mccarlton95@gmail.com`
    - `DATABASE_URL` = a Neon (or other Postgres) connection string
+   - `BLOB_READ_WRITE_TOKEN` = from Vercel Storage → Blob (public store; see Cover storage)
 2. Do **not** set `VITE_AUTH_ENABLED=false` on Production.
 3. Redeploy after changing env vars.
 4. Open `/login` → **Sign in** with `Mccarlton95@gmail.com` and the password
@@ -128,12 +130,45 @@ npm test
 npm run build        # vite build + db:migrate when DATABASE_URL is set
 ```
 
-## Cover storage (stopgap)
+## Cover storage (Vercel Blob)
 
-HTTPS catalog covers stay in `books.cover_url` and are returned in list payloads.
-Camera / file uploads are stored in `books.cover_data` and omitted from
-`listBooks` (detail loads them via `getBookCover`). This avoids multi‑hundred‑KB
-data URLs on every shelf load until a real blob store is wired up.
+**Preferred on Vercel:** camera / file uploads go to a **public** [Vercel Blob](https://vercel.com/docs/vercel-blob)
+store via `@vercel/blob` (`put` on the server). The HTTPS blob URL is saved on
+`books.cover_url` (same column as catalog covers) and returned in `listBooks` —
+no multi‑hundred‑KB base64 in Postgres for new uploads.
+
+### Env for Skip / Vercel
+
+1. Vercel project → **Storage** → create a **Blob** store with **public** access
+   (guests must be able to load cover images by URL).
+2. Connect the store to Production (and Preview if desired). Vercel injects:
+   - `BLOB_READ_WRITE_TOKEN` — **set this** (required for uploads outside OIDC /
+     when the SDK needs a static token; always safe to keep on the server only)
+   - Optionally `BLOB_STORE_ID` + runtime OIDC on Vercel (SDK prefers OIDC when
+     present; we still pass `BLOB_READ_WRITE_TOKEN` explicitly for Nitro/Vite)
+3. Redeploy after the env var is present.
+4. **Never** expose `BLOB_READ_WRITE_TOKEN` to the browser (`VITE_*`). Uploads
+   run only in editor-gated server functions (`addBook`, `updateCover`).
+
+### Behaviour
+
+| Source | Storage | List / guest read |
+| --- | --- | --- |
+| Open Library / Google catalog | `cover_url` (HTTPS) | Yes |
+| New editor upload (Blob configured) | Vercel Blob → `cover_url` (HTTPS); `cover_data` cleared | Yes |
+| Legacy upload (already in DB) | `cover_data` (data URL) | Detail only via `getBookCover` |
+| Local / no `BLOB_READ_WRITE_TOKEN` | Fallback: `cover_data` data URL | Detail only |
+
+Wishlist rows keep catalog HTTPS URLs in `cover_url` (no photo-upload UI today).
+Auth: only shelf editors may upload; guests may load public cover HTTPS URLs.
+Uploads are validated as JPEG/PNG/WebP and size-capped (~350 KB decoded).
+
+### Alternative (S3 / R2)
+
+If Blob is unavailable, point the same server helper at S3-compatible storage
+(R2/S3) and store the resulting HTTPS URL in `cover_url`. Document bucket public
+read + private write credentials as env vars instead of `BLOB_READ_WRITE_TOKEN`.
+Vercel Blob is the lowest-friction path for this Nitro/Vercel deploy.
 
 ## Security headers
 

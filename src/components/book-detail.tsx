@@ -104,7 +104,9 @@ export function BookDetail({
       });
       await router.invalidate({ sync: true });
       if (updated) {
-        setUploadedCover(coverData);
+        // Blob uploads return an HTTPS coverUrl; legacy fallback keeps the data URL preview.
+        setUploadedCover(updated.coverUrl ?? coverData);
+        setLocalCover(updated.coverUrl ?? coverData);
         onBookChange?.(updated);
       }
       toast.success("Cover photo saved");
@@ -115,7 +117,9 @@ export function BookDetail({
         await router.navigate({ to: "/login" });
         return;
       }
-      toast.error("Could not save that photo.");
+      toast.error(
+        err instanceof Error ? err.message : "Could not save that photo.",
+      );
     }
   }
 
