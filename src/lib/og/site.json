@@ -1,5 +1,10 @@
 {
   "title": "Raffy's bookshelf",
+  "short_name": "Raffy's shelf",
+  "description": "A shared family catalog of books already on the shelf, so the next gift is never a duplicate.",
   "type": "website",
-  "card": "custom"
+  "card": "custom",
+  "theme_color": "#FFF8EF",
+  "background_color": "#FFF8EF",
+  "color": "7B4DFF"
 }
