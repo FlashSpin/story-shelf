@@ -1,5 +1,6 @@
 import { getSql } from "@/lib/db";
 import { canonicalIsbn } from "@/lib/isbn";
+import { normalizeBookField } from "@/lib/book-identity";
 import type { Book, BookDraft, BookHit } from "@/lib/books.types";
 import { isCoverDataUrl, publicListCoverUrl } from "@/lib/cover-image";
 import {
@@ -80,6 +81,45 @@ export async function findBookByIsbn(isbn: string): Promise<Book | null> {
     [canon],
   );
   return rows[0] ? mapBook(rows[0]) : null;
+}
+
+/** Match owned shelf by normalized title + authors (fallback when no ISBN). */
+export async function findBookByTitleAuthors(
+  title: string,
+  authors: string,
+): Promise<Book | null> {
+  const normTitle = normalizeBookField(title);
+  const normAuthors = normalizeBookField(authors);
+  if (!normTitle) return null;
+  const sql = await getSql();
+  const rows = await sql.query<BookRow>(
+    `select ${SELECT} from books
+      where lower(regexp_replace(btrim(title), '\\s+', ' ', 'g')) = $1
+        and lower(regexp_replace(btrim(authors), '\\s+', ' ', 'g')) = $2
+      limit 1`,
+    [normTitle, normAuthors],
+  );
+  return rows[0] ? mapBook(rows[0]) : null;
+}
+
+/**
+ * Prefer ISBN when the draft has a valid one; otherwise title + authors.
+ * Used by addBook and move-from-wishlist.
+ */
+export async function findDuplicateBook(draft: {
+  title: string;
+  authors: string;
+  isbn?: string | null;
+}): Promise<Book | null> {
+  const rawIsbn = draft.isbn?.trim();
+  if (rawIsbn) {
+    const byIsbn = await findBookByIsbn(rawIsbn);
+    if (byIsbn) return byIsbn;
+    const canon = canonicalIsbn(rawIsbn);
+    // Valid ISBN that is not on the shelf → different edition, allow.
+    if (canon) return null;
+  }
+  return findBookByTitleAuthors(draft.title, draft.authors ?? "");
 }
 
 export async function findBookById(id: number): Promise<Book | null> {

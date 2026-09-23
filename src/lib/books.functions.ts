@@ -92,11 +92,13 @@ export const addBook = createServerFn({ method: "POST" })
   .validator(draftSchema)
   .middleware([authMiddleware, requireEditorMiddleware])
   .handler(async ({ data }): Promise<AddBookResult> => {
-    const { findBookByIsbn, insertBook } = await import("./books.server");
-    if (data.isbn) {
-      const existing = await findBookByIsbn(data.isbn);
-      if (existing) return { ok: false, reason: "duplicate", existing };
-    }
+    const { findDuplicateBook, insertBook } = await import("./books.server");
+    const existing = await findDuplicateBook({
+      title: data.title,
+      authors: data.authors ?? "",
+      isbn: data.isbn,
+    });
+    if (existing) return { ok: false, reason: "duplicate", existing };
     // Catalog HTTPS → coverUrl; uploads → Vercel Blob HTTPS (or legacy coverData locally).
     const book = await insertBook({
       ...data,
