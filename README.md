@@ -170,9 +170,11 @@ Auth: only shelf editors may upload; guests may load public cover HTTPS URLs.
 Uploads are validated as **JPEG or PNG only** (WebP/AVIF rejected) and
 size-capped (~350 KB decoded). Client compression always emits JPEG so covers
 decode on older iOS Safari. `BookCover` avoids `inset` / `loading="lazy"` and
-**never sizes tiles with `aspect-ratio` alone** — some iOS Safari builds claim
-support but still collapse absolute-filled boxes to zero height. `.aspect-cover`
-always uses the classic `height:0; padding-bottom:150%` 2:3 box.
+**never sizes tiles with `aspect-ratio` alone** or with `height:0` + padding on
+the same box as absolute children (older WebKit uses content height 0 as the
+abspos containing block → empty insides). `.aspect-cover` uses an in-flow
+`::before` padding spacer for a real 2:3 content height; photo and colourful
+title placeholder overlay that box.
 Open Library covers redirect twice onto archive.org (`view_archive.php`); that
 chain often fails on old mobile Safari, so `BookCover` loads them via same-origin
 `GET /api/cover?url=` (allowlisted hosts only) which follows redirects server-side
