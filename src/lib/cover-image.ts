@@ -26,6 +26,7 @@ export function publicListCoverUrl(
   return trimmed.replace(/^http:\/\//i, "https://");
 }
 
+/** Always JPEG — reliable on older iOS Safari (no WebP/AVIF-only uploads). */
 export async function compressCover(file: File): Promise<string> {
   if (!file.type.startsWith("image/")) {
     throw new Error("Please choose a photo of the cover.");

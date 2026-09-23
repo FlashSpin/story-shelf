@@ -1,13 +1,13 @@
 /**
  * Shared cover upload validation (client + server). Pure — no Node/Blob deps.
  * Server upload lives in cover-blob.server.ts.
+ *
+ * JPEG and PNG only — WebP/AVIF are rejected so uploaded blob covers decode on
+ * older iOS Safari (WebP needs iOS 14+; AVIF later). Client compressCover()
+ * always emits JPEG.
  */
 
-export const COVER_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-] as const;
+export const COVER_MIME_TYPES = ["image/jpeg", "image/png"] as const;
 
 export type CoverMimeType = (typeof COVER_MIME_TYPES)[number];
 
@@ -18,7 +18,7 @@ export const MAX_COVER_BYTES = 350_000;
 export const MAX_COVER_DATA_CHARS = 480_000;
 
 const DATA_URL_RE =
-  /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=\s]+)$/i;
+  /^data:(image\/(?:jpeg|png));base64,([A-Za-z0-9+/=\s]+)$/i;
 
 export type ParsedCoverDataUrl = {
   contentType: CoverMimeType;
@@ -32,14 +32,7 @@ export function isAllowedCoverMime(value: string): value is CoverMimeType {
 }
 
 export function extensionForCoverMime(mime: CoverMimeType): string {
-  switch (mime) {
-    case "image/png":
-      return "png";
-    case "image/webp":
-      return "webp";
-    default:
-      return "jpg";
-  }
+  return mime === "image/png" ? "png" : "jpg";
 }
 
 /**
@@ -53,11 +46,11 @@ export function parseCoverDataUrl(dataUrl: string): ParsedCoverDataUrl {
   }
   const match = DATA_URL_RE.exec(trimmed);
   if (!match) {
-    throw new Error("Cover must be a JPEG, PNG, or WebP image.");
+    throw new Error("Cover must be a JPEG or PNG image.");
   }
   const contentType = match[1]!.toLowerCase() as CoverMimeType;
   if (!isAllowedCoverMime(contentType)) {
-    throw new Error("Cover must be a JPEG, PNG, or WebP image.");
+    throw new Error("Cover must be a JPEG or PNG image.");
   }
   const b64 = match[2]!.replace(/\s+/g, "");
   let bytes: Uint8Array;

@@ -16,10 +16,11 @@ function jpegDataUrl(byteLength: number): string {
 }
 
 describe("cover-blob validation", () => {
-  it("accepts jpeg/png/webp mime types", () => {
+  it("accepts jpeg/png and rejects webp/gif", () => {
     assert.equal(isAllowedCoverMime("image/jpeg"), true);
     assert.equal(isAllowedCoverMime("image/png"), true);
-    assert.equal(isAllowedCoverMime("image/webp"), true);
+    assert.equal(isAllowedCoverMime("image/webp"), false);
+    assert.equal(isAllowedCoverMime("image/avif"), false);
     assert.equal(isAllowedCoverMime("image/gif"), false);
     assert.equal(isAllowedCoverMime("application/pdf"), false);
   });
@@ -27,7 +28,6 @@ describe("cover-blob validation", () => {
   it("maps mime to file extension", () => {
     assert.equal(extensionForCoverMime("image/jpeg"), "jpg");
     assert.equal(extensionForCoverMime("image/png"), "png");
-    assert.equal(extensionForCoverMime("image/webp"), "webp");
   });
 
   it("parses a small jpeg data URL", () => {
@@ -40,14 +40,21 @@ describe("cover-blob validation", () => {
   it("rejects non-image data URLs", () => {
     assert.throws(
       () => parseCoverDataUrl("data:text/plain;base64,aGVsbG8="),
-      /JPEG, PNG, or WebP/,
+      /JPEG or PNG/,
+    );
+  });
+
+  it("rejects webp data URLs (old iOS Safari)", () => {
+    assert.throws(
+      () => parseCoverDataUrl("data:image/webp;base64,UklGRg=="),
+      /JPEG or PNG/,
     );
   });
 
   it("rejects gif data URLs", () => {
     assert.throws(
       () => parseCoverDataUrl("data:image/gif;base64,R0lGODdh"),
-      /JPEG, PNG, or WebP/,
+      /JPEG or PNG/,
     );
   });
 
@@ -61,7 +68,7 @@ describe("cover-blob validation", () => {
   it("rejects empty base64 payload", () => {
     assert.throws(
       () => parseCoverDataUrl("data:image/jpeg;base64,"),
-      /JPEG, PNG, or WebP|Could not read/,
+      /JPEG or PNG|Could not read/,
     );
   });
 });
