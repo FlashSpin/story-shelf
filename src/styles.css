@@ -130,26 +130,12 @@
   }
 }
 
-/* Cover 2:3 box via an in-flow ::before spacer — never height:0 + padding on
- * the same element that hosts absolute children.
+/* Cover tiles: BookCover sizes with a real in-DOM SVG 2:3 spacer + explicit
+ * top/left/width/height overlays (see src/components/book-cover.tsx). Do not
+ * revive ::before / height:0+padding sizing for abspos children — on Michael's
+ * older iPhone Safari those overlays still failed to paint after #20.
  *
- * Older WebKit (pre–padding-box CB) uses the *content* height as the abspos
- * containing block. With height:0; padding-bottom:150% the padding paints a
- * muted tile, but photo + placeholder sit in a 0×0 content box (Bug after #19).
- * An in-flow ::before with padding-bottom gives the parent real content height;
- * overlays then fill a non-zero box. Also avoids bare aspect-ratio (Safari 15+)
- * which some builds claim but still collapse with abspos-only children.
- *
- * Unlayered so this overrides Tailwind's `.aspect-cover { aspect-ratio: … }`.
+ * `.aspect-cover` (Tailwind via --aspect-cover) remains for simple muted
+ * skeletons (e.g. gift-check loading) that have no absolute children.
  */
-.aspect-cover {
-  aspect-ratio: auto; /* neutralize Tailwind utility */
-}
-
-.aspect-cover::before {
-  content: "";
-  display: block;
-  width: 100%;
-  padding-bottom: 150%; /* height = 1.5 × width → 2:3 */
-}
 
