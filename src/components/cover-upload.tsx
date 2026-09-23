@@ -44,7 +44,7 @@ export function CoverUpload({
         title={title || "Cover"}
         authors={authors}
         coverUrl={coverUrl}
-        className="w-28 sm:w-full"
+        className="mx-auto w-36 sm:w-full"
       />
       <div className="grid w-full grid-cols-2 gap-2">
         <UploadButton
