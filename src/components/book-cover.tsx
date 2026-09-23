@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { displayCoverUrl } from "@/lib/cover-proxy";
 import { cn } from "@/lib/utils";
 
 const COVER_TONES = [
@@ -18,12 +19,13 @@ function toneFor(seed: string): (typeof COVER_TONES)[number] {
 }
 
 /**
- * Book cover tile. Avoids CSS that breaks on older iOS Safari:
- * - `inset-0` (unsupported before Safari 14.1) → explicit top/right/bottom/left
- * - `aspect-ratio` alone (unsupported before Safari 15) → padding-bottom fallback
- *   via `.aspect-cover` in styles.css
+ * Book cover tile. Avoids CSS / network pitfalls on older iOS Safari:
+ * - Open Library → archive.org redirect chains → same-origin `/api/cover`
+ * - `inset-0` (unsupported before Safari 14.1) → top/right/bottom/left
+ * - bare `aspect-ratio` (Safari 15+) → padding-bottom 2:3 box always
  * - never `loading="lazy"` (IntersectionObserver bugs on old iOS)
- * - JPEG/PNG sources preferred; referrerPolicy helps hotlinked Open Library covers
+ * - explicit width/height attributes so the img has intrinsic size even when
+ *   the absolute+padding box misbehaves
  */
 export function BookCover({
   title,
@@ -39,12 +41,13 @@ export function BookCover({
   sizes?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const showImage = Boolean(coverUrl) && !failed;
+  const src = useMemo(() => displayCoverUrl(coverUrl), [coverUrl]);
+  const showImage = Boolean(src) && !failed;
   const tone = useMemo(() => toneFor(title), [title]);
 
   useEffect(() => {
     setFailed(false);
-  }, [coverUrl]);
+  }, [src]);
 
   return (
     <div
@@ -71,8 +74,10 @@ export function BookCover({
       </div>
       {showImage ? (
         <img
-          src={coverUrl ?? undefined}
+          src={src ?? undefined}
           alt=""
+          width={200}
+          height={300}
           sizes={sizes}
           loading="eager"
           decoding="async"

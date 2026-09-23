@@ -14,6 +14,7 @@ import { Route as CheckRouteImport } from './routes/check'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ShareRouteImport } from './routes/share'
 import { Route as WishlistRouteImport } from './routes/wishlist'
+import { Route as ApiCoverRouteImport } from './routes/api/cover'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ShareIndexRouteImport } from './routes/share.index'
 import { Route as ShareWishlistRouteImport } from './routes/share.wishlist'
@@ -44,6 +45,11 @@ const WishlistRoute = WishlistRouteImport.update({
   path: '/wishlist',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCoverRoute = ApiCoverRouteImport.update({
+  id: '/api/cover',
+  path: '/api/cover',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/share': typeof ShareRouteWithChildren
   '/wishlist': typeof WishlistRoute
+  '/api/cover': typeof ApiCoverRoute
   '/invite/$token': typeof InviteTokenRoute
   '/share/wishlist': typeof ShareWishlistRoute
   '/share/': typeof ShareIndexRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/check': typeof CheckRoute
   '/login': typeof LoginRoute
   '/wishlist': typeof WishlistRoute
+  '/api/cover': typeof ApiCoverRoute
   '/invite/$token': typeof InviteTokenRoute
   '/share/wishlist': typeof ShareWishlistRoute
   '/share': typeof ShareIndexRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/share': typeof ShareRouteWithChildren
   '/wishlist': typeof WishlistRoute
+  '/api/cover': typeof ApiCoverRoute
   '/invite/$token': typeof InviteTokenRoute
   '/share/wishlist': typeof ShareWishlistRoute
   '/share/': typeof ShareIndexRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/share'
     | '/wishlist'
+    | '/api/cover'
     | '/invite/$token'
     | '/share/wishlist'
     | '/share/'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/check'
     | '/login'
     | '/wishlist'
+    | '/api/cover'
     | '/invite/$token'
     | '/share/wishlist'
     | '/share'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/share'
     | '/wishlist'
+    | '/api/cover'
     | '/invite/$token'
     | '/share/wishlist'
     | '/share/'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ShareRoute: typeof ShareRouteWithChildren
   WishlistRoute: typeof WishlistRoute
+  ApiCoverRoute: typeof ApiCoverRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       path: '/wishlist'
       fullPath: '/wishlist'
       preLoaderRoute: typeof WishlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cover': {
+      id: '/api/cover'
+      path: '/api/cover'
+      fullPath: '/api/cover'
+      preLoaderRoute: typeof ApiCoverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
@@ -229,6 +249,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ShareRoute: ShareRouteWithChildren,
   WishlistRoute: WishlistRoute,
+  ApiCoverRoute: ApiCoverRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
