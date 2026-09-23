@@ -41,18 +41,25 @@ export const addWishlistItem = createServerFn({ method: "POST" })
   .validator(draftSchema)
   .middleware([authMiddleware, requireEditorMiddleware])
   .handler(async ({ data }): Promise<AddWishlistResult> => {
-    const { findBookByIsbn } = await import("./books.server");
-    const { findWishlistByIsbn, insertWishlistItem } = await import(
+    const { findDuplicateBook } = await import("./books.server");
+    const { findDuplicateWishlistItem, insertWishlistItem } = await import(
       "./wishlist.server"
     );
 
-    if (data.isbn) {
-      const owned = await findBookByIsbn(data.isbn);
-      if (owned) return { ok: false, reason: "already-owned", existing: owned };
-      const wished = await findWishlistByIsbn(data.isbn);
-      if (wished)
-        return { ok: false, reason: "duplicate-wishlist", existing: wished };
-    }
+    const owned = await findDuplicateBook({
+      title: data.title,
+      authors: data.authors ?? "",
+      isbn: data.isbn,
+    });
+    if (owned) return { ok: false, reason: "already-owned", existing: owned };
+
+    const wished = await findDuplicateWishlistItem({
+      title: data.title,
+      authors: data.authors ?? "",
+      isbn: data.isbn,
+    });
+    if (wished)
+      return { ok: false, reason: "duplicate-wishlist", existing: wished };
 
     const item = await insertWishlistItem(data);
     return { ok: true, item };

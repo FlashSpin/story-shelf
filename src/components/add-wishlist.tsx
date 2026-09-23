@@ -15,7 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { lookupIsbn, searchCatalog } from "@/lib/books.functions";
 import type { Book, BookHit } from "@/lib/books.types";
-import { canonicalIsbn, looksLikeIsbn } from "@/lib/isbn";
+import { findDuplicateByIdentity } from "@/lib/book-identity";
+import { looksLikeIsbn } from "@/lib/isbn";
 import { addWishlistItem } from "@/lib/wishlist.functions";
 import type { WishlistDraft, WishlistItem } from "@/lib/wishlist.types";
 import { cn } from "@/lib/utils";
@@ -23,31 +24,11 @@ import { cn } from "@/lib/utils";
 type Mode = "search" | "manual";
 
 function ownedMatch(books: Book[], hit: BookHit): Book | undefined {
-  if (hit.isbn) {
-    const isbn = canonicalIsbn(hit.isbn);
-    const byIsbn = books.find((b) => b.isbn && canonicalIsbn(b.isbn) === isbn);
-    if (byIsbn) return byIsbn;
-  }
-  const t = hit.title.trim().toLowerCase();
-  const a = hit.authors.trim().toLowerCase();
-  return books.find(
-    (b) =>
-      b.title.trim().toLowerCase() === t && b.authors.trim().toLowerCase() === a,
-  );
+  return findDuplicateByIdentity(books, hit);
 }
 
 function wishMatch(items: WishlistItem[], hit: BookHit): WishlistItem | undefined {
-  if (hit.isbn) {
-    const isbn = canonicalIsbn(hit.isbn);
-    const byIsbn = items.find((b) => b.isbn && canonicalIsbn(b.isbn) === isbn);
-    if (byIsbn) return byIsbn;
-  }
-  const t = hit.title.trim().toLowerCase();
-  const a = hit.authors.trim().toLowerCase();
-  return items.find(
-    (b) =>
-      b.title.trim().toLowerCase() === t && b.authors.trim().toLowerCase() === a,
-  );
+  return findDuplicateByIdentity(items, hit);
 }
 
 function hitToDraft(hit: BookHit): WishlistDraft {
@@ -157,7 +138,7 @@ export function AddWishlistDialog({
       });
       if (!result.ok) {
         if (result.reason === "already-owned") {
-          toast.message("Already on the shelf", {
+          toast.message("Already on Raffy’s shelf", {
             description: result.existing.title,
           });
           onOpenChange(false);
@@ -294,7 +275,7 @@ export function AddWishlistDialog({
                           disabled={saving}
                           onClick={() => {
                             if (owned) {
-                              toast.message("Already on the shelf", {
+                              toast.message("Already on Raffy’s shelf", {
                                 description: owned.title,
                               });
                               onOpenChange(false);

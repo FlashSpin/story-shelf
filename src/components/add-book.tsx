@@ -18,22 +18,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { addBook, lookupIsbn, searchCatalog } from "@/lib/books.functions";
 import type { Book, BookDraft, BookHit } from "@/lib/books.types";
-import { canonicalIsbn, looksLikeIsbn } from "@/lib/isbn";
+import { findDuplicateByIdentity } from "@/lib/book-identity";
+import { looksLikeIsbn } from "@/lib/isbn";
 import { cn } from "@/lib/utils";
 
 type Mode = "search" | "scan" | "manual";
 
 function ownedMatch(books: Book[], hit: BookHit): Book | undefined {
-  if (hit.isbn) {
-    const isbn = canonicalIsbn(hit.isbn);
-    const byIsbn = books.find((b) => b.isbn && canonicalIsbn(b.isbn) === isbn);
-    if (byIsbn) return byIsbn;
-  }
-  const t = hit.title.trim().toLowerCase();
-  const a = hit.authors.trim().toLowerCase();
-  return books.find(
-    (b) => b.title.trim().toLowerCase() === t && b.authors.trim().toLowerCase() === a,
-  );
+  return findDuplicateByIdentity(books, hit);
 }
 
 function hitToDraft(hit: BookHit): BookDraft {
@@ -145,7 +137,7 @@ export function AddBookDialog({
         },
       });
       if (!result.ok) {
-        toast.message("Already on the shelf", {
+        toast.message("Already on Raffy’s shelf", {
           description: result.existing.title,
         });
         onOpenChange(false);
@@ -177,7 +169,7 @@ export function AddBookDialog({
       if (hit) {
         const existing = ownedMatch(books, hit);
         if (existing) {
-          toast.message("Already on the shelf", { description: existing.title });
+          toast.message("Already on Raffy’s shelf", { description: existing.title });
           onOpenChange(false);
           onOpenExisting(existing);
           return;
@@ -323,7 +315,7 @@ export function AddBookDialog({
                           disabled={saving}
                           onClick={() => {
                             if (owned) {
-                              toast.message("Already on the shelf", {
+                              toast.message("Already on Raffy’s shelf", {
                                 description: owned.title,
                               });
                               onOpenChange(false);

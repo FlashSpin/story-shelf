@@ -1,8 +1,9 @@
 import { getSql } from "@/lib/db";
 import { canonicalIsbn } from "@/lib/isbn";
+import { normalizeBookField } from "@/lib/book-identity";
 import { publicListCoverUrl } from "@/lib/cover-image";
 import type { Book } from "@/lib/books.types";
-import { findBookByIsbn, insertBook } from "@/lib/books.server";
+import { findDuplicateBook, insertBook } from "@/lib/books.server";
 import type { WishlistDraft, WishlistItem } from "@/lib/wishlist.types";
 
 type WishlistRow = {
@@ -79,6 +80,41 @@ export async function findWishlistByIsbn(
   return rows[0] ? mapItem(rows[0]) : null;
 }
 
+/** Match wishlist by normalized title + authors (fallback when no ISBN). */
+export async function findWishlistByTitleAuthors(
+  title: string,
+  authors: string,
+): Promise<WishlistItem | null> {
+  const normTitle = normalizeBookField(title);
+  const normAuthors = normalizeBookField(authors);
+  if (!normTitle) return null;
+  const sql = await getSql();
+  const rows = await sql.query<WishlistRow>(
+    `select ${SELECT} from wishlist_items
+      where lower(regexp_replace(btrim(title), '\\s+', ' ', 'g')) = $1
+        and lower(regexp_replace(btrim(authors), '\\s+', ' ', 'g')) = $2
+      limit 1`,
+    [normTitle, normAuthors],
+  );
+  return rows[0] ? mapItem(rows[0]) : null;
+}
+
+/** Prefer ISBN when valid; otherwise title + authors. */
+export async function findDuplicateWishlistItem(draft: {
+  title: string;
+  authors: string;
+  isbn?: string | null;
+}): Promise<WishlistItem | null> {
+  const rawIsbn = draft.isbn?.trim();
+  if (rawIsbn) {
+    const byIsbn = await findWishlistByIsbn(rawIsbn);
+    if (byIsbn) return byIsbn;
+    const canon = canonicalIsbn(rawIsbn);
+    if (canon) return null;
+  }
+  return findWishlistByTitleAuthors(draft.title, draft.authors ?? "");
+}
+
 export async function findWishlistById(
   id: number,
 ): Promise<WishlistItem | null> {
@@ -151,12 +187,14 @@ export async function moveWishlistItemToShelf(
   const item = await findWishlistById(id);
   if (!item) return { ok: false, reason: "missing" };
 
-  if (item.isbn) {
-    const existing = await findBookByIsbn(item.isbn);
-    if (existing) {
-      await deleteWishlistById(id);
-      return { ok: false, reason: "duplicate", existing };
-    }
+  const existing = await findDuplicateBook({
+    title: item.title,
+    authors: item.authors,
+    isbn: item.isbn,
+  });
+  if (existing) {
+    await deleteWishlistById(id);
+    return { ok: false, reason: "duplicate", existing };
   }
 
   const book = await insertBook({
