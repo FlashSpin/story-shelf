@@ -167,7 +167,10 @@ no multi‑hundred‑KB base64 in Postgres for new uploads.
 
 Wishlist rows keep catalog HTTPS URLs in `cover_url` (no photo-upload UI today).
 Auth: only shelf editors may upload; guests may load public cover HTTPS URLs.
-Uploads are validated as JPEG/PNG/WebP and size-capped (~350 KB decoded).
+Uploads are validated as **JPEG or PNG only** (WebP/AVIF rejected) and
+size-capped (~350 KB decoded). Client compression always emits JPEG so covers
+decode on older iOS Safari. `BookCover` avoids `inset` / bare `aspect-ratio` /
+`loading="lazy"` pitfalls that collapse or blank covers on pre‑iOS 15 Safari.
 
 ### Alternative (S3 / R2)
 

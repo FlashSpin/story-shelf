@@ -85,7 +85,7 @@ export async function resolveCoverUpdate(
   coverData: string,
 ): Promise<StoredCoverFields> {
   if (!isCoverDataUrl(coverData)) {
-    throw new Error("Cover must be a JPEG, PNG, or WebP image.");
+    throw new Error("Cover must be a JPEG or PNG image.");
   }
   if (isCoverBlobConfigured()) {
     const blobUrl = await uploadCoverToBlob(coverData);

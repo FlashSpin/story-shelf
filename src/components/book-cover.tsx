@@ -17,6 +17,14 @@ function toneFor(seed: string): (typeof COVER_TONES)[number] {
   return COVER_TONES[Math.abs(hash) % COVER_TONES.length];
 }
 
+/**
+ * Book cover tile. Avoids CSS that breaks on older iOS Safari:
+ * - `inset-0` (unsupported before Safari 14.1) → explicit top/right/bottom/left
+ * - `aspect-ratio` alone (unsupported before Safari 15) → padding-bottom fallback
+ *   via `.aspect-cover` in styles.css
+ * - never `loading="lazy"` (IntersectionObserver bugs on old iOS)
+ * - JPEG/PNG sources preferred; referrerPolicy helps hotlinked Open Library covers
+ */
 export function BookCover({
   title,
   authors,
@@ -48,7 +56,7 @@ export function BookCover({
       <div
         aria-hidden={!showImage}
         className={cn(
-          "absolute inset-0 flex flex-col justify-between p-3 text-primary-foreground",
+          "absolute top-0 right-0 bottom-0 left-0 flex flex-col justify-between p-3 text-primary-foreground",
           tone,
         )}
       >
@@ -66,7 +74,13 @@ export function BookCover({
           src={coverUrl ?? undefined}
           alt=""
           sizes={sizes}
-          className="absolute inset-0 h-full w-full object-cover outline outline-1 -outline-offset-1 outline-foreground/10"
+          loading="eager"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          // Explicit top/right/bottom/left: old Safari ignores `inset`.
+          // height/width 100% beats preflight `img { height: auto }` quirks.
+          className="absolute top-0 right-0 bottom-0 left-0 h-full w-full object-cover border border-foreground/10"
+          style={{ height: "100%", width: "100%", objectFit: "cover" }}
           onError={() => setFailed(true)}
         />
       ) : null}

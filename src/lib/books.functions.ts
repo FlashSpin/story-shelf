@@ -9,7 +9,7 @@ const ageBandSchema = z.union([z.enum(AGE_BANDS), z.literal(""), z.null()]).opti
 const coverDataSchema = z
   .string()
   .max(400_000)
-  .regex(/^data:image\/(jpeg|png|webp);base64,/i)
+  .regex(/^data:image\/(jpeg|png);base64,/i)
   .optional()
   .nullable();
 
@@ -133,7 +133,7 @@ export const updateCover = createServerFn({ method: "POST" })
         .string()
         .min(32)
         .max(400_000)
-        .regex(/^data:image\/(jpeg|png|webp);base64,/i),
+        .regex(/^data:image\/(jpeg|png);base64,/i),
     }),
   )
   .middleware([authMiddleware, requireEditorMiddleware])

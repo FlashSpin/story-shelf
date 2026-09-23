@@ -129,3 +129,17 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* iOS Safari cover aspect-ratio fallback */
+/*
+ * `aspect-ratio` is Safari 15+. Older iOS ignores it, so a cover sized only by
+ * aspect-ratio collapses to 0 height (absolute children are out of flow) and
+ * looks like "covers not loading". Padding-bottom preserves 2:3 when unsupported.
+ */
+@supports not (aspect-ratio: 2 / 3) {
+  .aspect-cover {
+    height: 0;
+    padding-bottom: 150%; /* height = 1.5 × width → 2:3 */
+  }
+}
+
