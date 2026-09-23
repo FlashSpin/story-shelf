@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { displayCoverUrl } from "@/lib/cover-proxy";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +9,15 @@ const COVER_TONES = [
   "bg-cover-4",
   "bg-cover-5",
 ] as const;
+
+/** Explicit abspos fill — prefer top/left/width/height over inset or TRBL. */
+const FILL: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+};
 
 function toneFor(seed: string): (typeof COVER_TONES)[number] {
   let hash = 0;
@@ -21,9 +30,9 @@ function toneFor(seed: string): (typeof COVER_TONES)[number] {
 /**
  * Book cover tile. Avoids CSS / network pitfalls on older iOS Safari:
  * - Open Library → archive.org redirect chains → same-origin `/api/cover`
- * - `inset-0` (unsupported before Safari 14.1) → top/right/bottom/left
- * - bare `aspect-ratio` / height:0+padding abspos CB → in-flow ::before 2:3
- *   spacer on `.aspect-cover` (real content height; overlays fill it)
+ * - `inset-0` (unsupported before Safari 14.1) → top/left + width/height 100%
+ * - ::before / height:0 padding sizing → real in-DOM SVG 2:3 spacer (intrinsic
+ *   ratio is reliable on old WebKit; abspos overlays use that box + z-index)
  * - never `loading="lazy"` (IntersectionObserver bugs on old iOS)
  * - explicit width/height attributes as a last-resort intrinsic size
  */
@@ -52,16 +61,24 @@ export function BookCover({
   return (
     <div
       className={cn(
-        "relative aspect-cover overflow-hidden rounded-md bg-muted shadow-card",
+        "relative w-full overflow-hidden rounded-md bg-muted shadow-card",
         className,
       )}
     >
+      {/* Real in-DOM 2:3 spacer — do not size abspos CB with ::before alone. */}
+      <svg
+        viewBox="0 0 2 3"
+        className="block h-auto w-full"
+        aria-hidden
+        focusable="false"
+      />
       <div
         aria-hidden={!showImage}
         className={cn(
-          "absolute top-0 right-0 bottom-0 left-0 flex flex-col justify-between p-3 text-primary-foreground",
+          "flex flex-col justify-between p-3 text-primary-foreground",
           tone,
         )}
+        style={{ ...FILL, zIndex: 1 }}
       >
         <p className="font-display text-sm font-medium leading-snug line-clamp-5">
           {title}
@@ -82,10 +99,8 @@ export function BookCover({
           loading="eager"
           decoding="async"
           referrerPolicy="no-referrer"
-          // Explicit top/right/bottom/left: old Safari ignores `inset`.
-          // height/width 100% beats preflight `img { height: auto }` quirks.
-          className="absolute top-0 right-0 bottom-0 left-0 h-full w-full object-cover border border-foreground/10"
-          style={{ height: "100%", width: "100%", objectFit: "cover" }}
+          className="border border-foreground/10"
+          style={{ ...FILL, zIndex: 2, objectFit: "cover" }}
           onError={() => setFailed(true)}
         />
       ) : null}
