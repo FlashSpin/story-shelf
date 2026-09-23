@@ -169,8 +169,14 @@ Wishlist rows keep catalog HTTPS URLs in `cover_url` (no photo-upload UI today).
 Auth: only shelf editors may upload; guests may load public cover HTTPS URLs.
 Uploads are validated as **JPEG or PNG only** (WebP/AVIF rejected) and
 size-capped (~350 KB decoded). Client compression always emits JPEG so covers
-decode on older iOS Safari. `BookCover` avoids `inset` / bare `aspect-ratio` /
-`loading="lazy"` pitfalls that collapse or blank covers on pre‑iOS 15 Safari.
+decode on older iOS Safari. `BookCover` avoids `inset` / `loading="lazy"` and
+**never sizes tiles with `aspect-ratio` alone** — some iOS Safari builds claim
+support but still collapse absolute-filled boxes to zero height. `.aspect-cover`
+always uses the classic `height:0; padding-bottom:150%` 2:3 box.
+Open Library covers redirect twice onto archive.org (`view_archive.php`); that
+chain often fails on old mobile Safari, so `BookCover` loads them via same-origin
+`GET /api/cover?url=` (allowlisted hosts only) which follows redirects server-side
+and returns a single image response.
 
 ### Alternative (S3 / R2)
 

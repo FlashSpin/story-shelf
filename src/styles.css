@@ -130,16 +130,20 @@
   }
 }
 
-/* iOS Safari cover aspect-ratio fallback */
-/*
- * `aspect-ratio` is Safari 15+. Older iOS ignores it, so a cover sized only by
- * aspect-ratio collapses to 0 height (absolute children are out of flow) and
- * looks like "covers not loading". Padding-bottom preserves 2:3 when unsupported.
+/* Cover 2:3 box — ALWAYS padding-bottom (classic), never aspect-ratio alone.
+ *
+ * Critical: some iOS Safari builds claim `aspect-ratio` support in @supports
+ * but still collapse a box whose only height comes from aspect-ratio when
+ * children are position:absolute (out of flow). Result: zero-height tiles,
+ * not just missing images. Do not gate height on @supports.
+ *
+ * Unlayered so this overrides Tailwind's `.aspect-cover { aspect-ratio: … }`.
+ * BookCover sets position:relative; absolute img/placeholder fill the
+ * padding box (top/right/bottom/left, not inset).
  */
-@supports not (aspect-ratio: 2 / 3) {
-  .aspect-cover {
-    height: 0;
-    padding-bottom: 150%; /* height = 1.5 × width → 2:3 */
-  }
+.aspect-cover {
+  height: 0;
+  padding-bottom: 150%; /* height = 1.5 × width → 2:3 */
+  aspect-ratio: auto; /* neutralize Tailwind utility */
 }
 
