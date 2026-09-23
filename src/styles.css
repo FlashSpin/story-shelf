@@ -130,20 +130,26 @@
   }
 }
 
-/* Cover 2:3 box — ALWAYS padding-bottom (classic), never aspect-ratio alone.
+/* Cover 2:3 box via an in-flow ::before spacer — never height:0 + padding on
+ * the same element that hosts absolute children.
  *
- * Critical: some iOS Safari builds claim `aspect-ratio` support in @supports
- * but still collapse a box whose only height comes from aspect-ratio when
- * children are position:absolute (out of flow). Result: zero-height tiles,
- * not just missing images. Do not gate height on @supports.
+ * Older WebKit (pre–padding-box CB) uses the *content* height as the abspos
+ * containing block. With height:0; padding-bottom:150% the padding paints a
+ * muted tile, but photo + placeholder sit in a 0×0 content box (Bug after #19).
+ * An in-flow ::before with padding-bottom gives the parent real content height;
+ * overlays then fill a non-zero box. Also avoids bare aspect-ratio (Safari 15+)
+ * which some builds claim but still collapse with abspos-only children.
  *
  * Unlayered so this overrides Tailwind's `.aspect-cover { aspect-ratio: … }`.
- * BookCover sets position:relative; absolute img/placeholder fill the
- * padding box (top/right/bottom/left, not inset).
  */
 .aspect-cover {
-  height: 0;
-  padding-bottom: 150%; /* height = 1.5 × width → 2:3 */
   aspect-ratio: auto; /* neutralize Tailwind utility */
+}
+
+.aspect-cover::before {
+  content: "";
+  display: block;
+  width: 100%;
+  padding-bottom: 150%; /* height = 1.5 × width → 2:3 */
 }
 

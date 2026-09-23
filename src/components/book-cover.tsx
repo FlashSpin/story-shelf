@@ -22,10 +22,10 @@ function toneFor(seed: string): (typeof COVER_TONES)[number] {
  * Book cover tile. Avoids CSS / network pitfalls on older iOS Safari:
  * - Open Library → archive.org redirect chains → same-origin `/api/cover`
  * - `inset-0` (unsupported before Safari 14.1) → top/right/bottom/left
- * - bare `aspect-ratio` (Safari 15+) → padding-bottom 2:3 box always
+ * - bare `aspect-ratio` / height:0+padding abspos CB → in-flow ::before 2:3
+ *   spacer on `.aspect-cover` (real content height; overlays fill it)
  * - never `loading="lazy"` (IntersectionObserver bugs on old iOS)
- * - explicit width/height attributes so the img has intrinsic size even when
- *   the absolute+padding box misbehaves
+ * - explicit width/height attributes as a last-resort intrinsic size
  */
 export function BookCover({
   title,
