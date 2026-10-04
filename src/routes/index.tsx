@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, Link2, Plus, Search, UserPlus } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { AddBookDialog } from "@/components/add-book";
 import { InviteEditorDialog } from "@/components/invite-editor";
 import { BookCover } from "@/components/book-cover";

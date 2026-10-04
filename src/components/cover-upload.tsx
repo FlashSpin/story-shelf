@@ -1,8 +1,12 @@
 import { useId, useState, type ReactNode } from "react";
 import { Camera, ImageUp, LoaderCircle } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { BookCover } from "@/components/book-cover";
-import { compressCover } from "@/lib/cover-image";
+import {
+  COVER_PHOTO_FRIENDLY_ERROR,
+  CoverPhotoError,
+  compressCover,
+} from "@/lib/cover-image";
 import { cn } from "@/lib/utils";
 
 export function CoverUpload({
@@ -28,8 +32,18 @@ export function CoverUpload({
     try {
       onChange(await compressCover(file));
     } catch (err) {
+      // Log the real reason (e.g. decode failure on old iOS Safari); show a
+      // friendly message instead of raw browser errors.
+      console.error(
+        "[cover] could not prepare photo",
+        { name: file.name, type: file.type, size: file.size },
+        err,
+        err instanceof CoverPhotoError ? err.detail : undefined,
+      );
       toast.error(
-        err instanceof Error ? err.message : "Could not read that photo.",
+        err instanceof CoverPhotoError
+          ? err.message
+          : COVER_PHOTO_FRIENDLY_ERROR,
       );
     } finally {
       setBusy(false);

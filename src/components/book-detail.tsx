@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { CoverUpload } from "@/components/cover-upload";
 import { BookCover } from "@/components/book-cover";
 import { Badge } from "@/components/ui/badge";
@@ -121,9 +121,8 @@ export function BookDetail({
         await router.navigate({ to: "/login" });
         return;
       }
-      toast.error(
-        err instanceof Error ? err.message : "Could not save that photo.",
-      );
+      console.error("[cover] updateCover failed", err);
+      toast.error("Couldn't save that photo. Try again or use another one.");
     }
   }
 
