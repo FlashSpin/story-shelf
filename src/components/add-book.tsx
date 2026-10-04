@@ -154,6 +154,7 @@ export function AddBookDialog({
         await router.navigate({ to: "/login" });
         return;
       }
+      console.error("[add-book] addBook failed", err);
       toast.error("Could not add that book. Try again.");
     } finally {
       setSaving(false);
