@@ -2,10 +2,13 @@ import { useId, useState, type ReactNode } from "react";
 import { Camera, ImageUp, LoaderCircle } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { BookCover } from "@/components/book-cover";
+import { CoverCropDialog } from "@/components/cover-crop-dialog";
+import type { CropRect } from "@/lib/cover-crop";
 import {
   COVER_PHOTO_FRIENDLY_ERROR,
   CoverPhotoError,
-  compressCover,
+  loadCoverWorkingCanvas,
+  renderCoverCrop,
 } from "@/lib/cover-image";
 import { cn } from "@/lib/utils";
 
@@ -25,32 +28,60 @@ export function CoverUpload({
   const cameraId = useId();
   const fileId = useId();
   const [busy, setBusy] = useState(false);
+  // Photo waiting in the crop step (downscaled working canvas).
+  const [cropCanvas, setCropCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [encoding, setEncoding] = useState(false);
+
+  function reportPhotoError(err: unknown, file?: File) {
+    // Log the real reason (e.g. decode failure on old iOS Safari); show a
+    // friendly message instead of raw browser errors.
+    console.error(
+      "[cover] could not prepare photo",
+      file ? { name: file.name, type: file.type, size: file.size } : undefined,
+      err,
+      err instanceof CoverPhotoError ? err.detail : undefined,
+    );
+    toast.error(
+      err instanceof CoverPhotoError ? err.message : COVER_PHOTO_FRIENDLY_ERROR,
+    );
+  }
 
   async function onFile(file: File | undefined) {
     if (!file || disabled) return;
     setBusy(true);
     try {
-      onChange(await compressCover(file));
+      setCropCanvas(await loadCoverWorkingCanvas(file));
     } catch (err) {
-      // Log the real reason (e.g. decode failure on old iOS Safari); show a
-      // friendly message instead of raw browser errors.
-      console.error(
-        "[cover] could not prepare photo",
-        { name: file.name, type: file.type, size: file.size },
-        err,
-        err instanceof CoverPhotoError ? err.detail : undefined,
-      );
-      toast.error(
-        err instanceof CoverPhotoError
-          ? err.message
-          : COVER_PHOTO_FRIENDLY_ERROR,
-      );
+      reportPhotoError(err, file);
     } finally {
       setBusy(false);
     }
   }
 
-  const locked = disabled || busy;
+  function closeCrop() {
+    if (cropCanvas) {
+      // Release the working canvas memory (matters on old iPhones).
+      cropCanvas.width = 0;
+      cropCanvas.height = 0;
+    }
+    setCropCanvas(null);
+  }
+
+  async function onUseCrop(crop: CropRect) {
+    if (!cropCanvas) return;
+    setEncoding(true);
+    try {
+      const dataUrl = await renderCoverCrop(cropCanvas, crop);
+      closeCrop();
+      onChange(dataUrl);
+    } catch (err) {
+      reportPhotoError(err);
+    } finally {
+      setEncoding(false);
+    }
+  }
+
+  const locked = disabled || busy || Boolean(cropCanvas);
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -100,6 +131,13 @@ export function CoverUpload({
           e.target.value = "";
           void onFile(file);
         }}
+      />
+      <CoverCropDialog
+        canvas={cropCanvas}
+        open={Boolean(cropCanvas)}
+        busy={encoding}
+        onCancel={closeCrop}
+        onConfirm={(crop) => void onUseCrop(crop)}
       />
     </div>
   );
