@@ -1,6 +1,6 @@
 import { useId, useState, type ReactNode } from "react";
 import { Camera, ImageUp, LoaderCircle } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { BookCover } from "@/components/book-cover";
 import {
   COVER_PHOTO_FRIENDLY_ERROR,

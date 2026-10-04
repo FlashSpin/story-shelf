@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { AuthProvider } from "@/lib/auth/provider";
 import { InstallAppBanner } from "@/components/install-app-banner";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
-import { Toaster } from "sonner";
+import { AppToaster } from "@/components/app-toaster";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "Raffy's bookshelf";
@@ -57,15 +57,7 @@ export const Route = createRootRoute({
         <AuthProvider>
           <Outlet />
           <InstallAppBanner />
-          <Toaster
-            theme="light"
-            position="top-center"
-            richColors={false}
-            toastOptions={{
-              className:
-                "font-sans border-border bg-card text-foreground shadow-overlay",
-            }}
-          />
+          <AppToaster />
         </AuthProvider>
         <Scripts />
       </body>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { Gift, Plus } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { AddWishlistDialog } from "@/components/add-wishlist";
 import { BookCover } from "@/components/book-cover";
 import { Badge } from "@/components/ui/badge";

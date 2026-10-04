@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { CoverUpload } from "@/components/cover-upload";
 import { BookCover } from "@/components/book-cover";
 import { Badge } from "@/components/ui/badge";

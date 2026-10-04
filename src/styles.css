@@ -139,3 +139,21 @@
  * skeletons (e.g. gift-check loading) that have no absolute children.
  */
 
+
+/* Toasts (src/components/app-toaster.tsx). On phones sonner stretches the
+ * stack full width at the top, which covered the right-aligned header "Add"
+ * button (and the dialog close button). Keep it top-center but narrower:
+ * ~240px on a 480px phone clears the Add button; never wider than 22rem.
+ * Sonner toasts are absolutely positioned inside the <ol>, so the <ol> width
+ * sets the toast width. */
+@media (max-width: 600px) {
+  [data-sonner-toaster].app-toaster[data-x-position="center"] {
+    left: 50%;
+    right: auto;
+    width: min(calc(100vw - 2rem), clamp(15rem, calc(100vw - 15rem), 22rem));
+    transform: translateX(-50%);
+  }
+  [data-sonner-toaster].app-toaster [data-sonner-toast] {
+    width: 100%;
+  }
+}

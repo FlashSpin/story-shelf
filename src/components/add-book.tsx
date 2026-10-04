@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Camera, Check, LoaderCircle, Search } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { BarcodeScanner, scannerSupported } from "@/components/barcode-scanner";
 import { BookCover } from "@/components/book-cover";
 import { CoverUpload } from "@/components/cover-upload";

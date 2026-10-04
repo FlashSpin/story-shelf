@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Check, LoaderCircle, Search } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { BookCover } from "@/components/book-cover";
 import { Button } from "@/components/ui/button";
 import {
