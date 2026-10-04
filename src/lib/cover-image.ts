@@ -112,12 +112,16 @@ async function decodeCoverImage(file: Blob): Promise<DecodedImage> {
   }
 }
 
-function encodeStep(image: DecodedImage, step: CoverEncodeStep): string {
-  const { width, height } = scaledCoverSize(
-    image.width,
-    image.height,
-    step.maxEdge,
-  );
+/** A rectangle in source pixels; null = the whole image. */
+export type CoverSourceRect = { x: number; y: number; w: number; h: number };
+
+function encodeStep(
+  image: DecodedImage,
+  step: CoverEncodeStep,
+  rect: CoverSourceRect | null = null,
+): string {
+  const src = rect ?? { x: 0, y: 0, w: image.width, h: image.height };
+  const { width, height } = scaledCoverSize(src.w, src.h, step.maxEdge);
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -126,12 +130,97 @@ function encodeStep(image: DecodedImage, step: CoverEncodeStep): string {
   // White matte so transparent PNGs don't turn black as JPEG.
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, width, height);
-  ctx.drawImage(image.source, 0, 0, width, height);
+  ctx.drawImage(image.source, src.x, src.y, src.w, src.h, 0, 0, width, height);
   const dataUrl = canvas.toDataURL("image/jpeg", step.quality);
   // Free canvas backing store promptly (old iOS has a small canvas memory cap).
   canvas.width = 0;
   canvas.height = 0;
   return dataUrl;
+}
+
+async function encodeCover(
+  image: DecodedImage,
+  rect: CoverSourceRect | null,
+): Promise<string> {
+  const result = await encodeCoverWithinLimit(
+    (step) => encodeStep(image, step, rect),
+    {
+      onStepFailed: (step, reason) =>
+        console.warn("[cover] encode step failed", step, reason),
+    },
+  );
+  if (!result) {
+    throw new CoverPhotoError(
+      COVER_PHOTO_FRIENDLY_ERROR,
+      new Error("No encode step produced a usable JPEG under the size cap"),
+    );
+  }
+  return result.dataUrl;
+}
+
+function assertImageFile(file: File) {
+  // Some iOS/Android pickers report an empty type; let decode decide then.
+  if (file.type && !file.type.startsWith("image/")) {
+    throw new CoverPhotoError("Please choose a photo of the cover.");
+  }
+}
+
+/** Longest edge of the in-memory working copy used by the crop step. */
+const WORKING_MAX_EDGE = 1600;
+
+/**
+ * Decode a picked photo into a downscaled canvas (≤1600px edge) for the crop
+ * step. The full-size decode is released immediately so old iPhones don't hold
+ * a 12MP bitmap while the editor drags the frame. The canvas is also what the
+ * crop step displays, so preview and output always match.
+ */
+export async function loadCoverWorkingCanvas(
+  file: File,
+): Promise<HTMLCanvasElement> {
+  assertImageFile(file);
+  const image = await decodeCoverImage(file);
+  try {
+    const { width, height } = scaledCoverSize(
+      image.width,
+      image.height,
+      WORKING_MAX_EDGE,
+    );
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new CoverPhotoError(
+        COVER_PHOTO_FRIENDLY_ERROR,
+        new Error("2D canvas context unavailable"),
+      );
+    }
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(image.source, 0, 0, width, height);
+    return canvas;
+  } finally {
+    image.release();
+  }
+}
+
+/**
+ * Encode `rect` (working-canvas pixels) of a working canvas as the cover JPEG.
+ * Same size steps and caps as compressCover (720px edge, ≤380k chars).
+ */
+export function renderCoverCrop(
+  canvas: HTMLCanvasElement,
+  rect: CoverSourceRect | null,
+): Promise<string> {
+  return encodeCover(
+    {
+      source: canvas,
+      width: canvas.width,
+      height: canvas.height,
+      release: () => {},
+    },
+    rect,
+  );
 }
 
 /**
@@ -140,26 +229,10 @@ function encodeStep(image: DecodedImage, step: CoverEncodeStep): string {
  * Steps quality/size down rather than failing when a photo is too large.
  */
 export async function compressCover(file: File): Promise<string> {
-  // Some iOS/Android pickers report an empty type; let decode decide then.
-  if (file.type && !file.type.startsWith("image/")) {
-    throw new CoverPhotoError("Please choose a photo of the cover.");
-  }
+  assertImageFile(file);
   const image = await decodeCoverImage(file);
   try {
-    const result = await encodeCoverWithinLimit(
-      (step) => encodeStep(image, step),
-      {
-        onStepFailed: (step, reason) =>
-          console.warn("[cover] encode step failed", step, reason),
-      },
-    );
-    if (!result) {
-      throw new CoverPhotoError(
-        COVER_PHOTO_FRIENDLY_ERROR,
-        new Error("No encode step produced a usable JPEG under the size cap"),
-      );
-    }
-    return result.dataUrl;
+    return await encodeCover(image, null);
   } finally {
     image.release();
   }
